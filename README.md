@@ -12,6 +12,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - Google review-request generator using the saved business review URL
 - CRM leads with live pipeline metrics, status updates and local record management
 - Appointment booking, confirmation/completion states, expected value and optional CRM capture
+- No-code website lead form builder with live preview, consent capture, source tracking and local CRM test submissions
 - Analytics overview with GA4 and Looker Studio placeholders
 - Interactive charts and scenario-based lead/revenue predictions with CSV export
 - Local CSV import (`month, leads, revenue, visits`) with validation and trend regression
