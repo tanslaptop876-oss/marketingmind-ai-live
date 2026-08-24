@@ -10,6 +10,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - Multilingual local content generator with editable drafts, planner save, and scheduling
 - Social scheduling queue with edit, reschedule, status and delete controls
 - Basic SEO audit and Google Business/local SEO checklist
+- Secure live-URL SEO audit for title, description, H1, canonical, viewport, ALT coverage, schema, indexability and language
 - Google review-request generator using the saved business review URL
 - CRM leads with live pipeline metrics, status updates and local record management
 - Appointment booking, confirmation/completion states, expected value and optional CRM capture
