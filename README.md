@@ -65,6 +65,10 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `supabase/schema.sql` creates an authentication-ready database for workspaces, leads, appointments, posts, usage events, and historical forecast points. It enables Row Level Security so authenticated users can access only workspaces they own. Run it in a new Supabase project's SQL editor, then connect the frontend through server-side or authenticated API code. Never place a Supabase service-role key in browser files.
 
+## Cloudflare Pages Function
+
+`functions/api/health.js` provides a same-origin `GET /api/health` endpoint on Cloudflare Pages. It returns application, version, runtime, environment, and timestamp data with no-store and nosniff headers. Use this endpoint as the health check for future authenticated Supabase and AI API routes.
+
 ## Files
 
 - `index.html` — accessible app shell and page metadata
