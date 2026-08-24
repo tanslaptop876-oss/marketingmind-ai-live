@@ -18,6 +18,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - No-code website lead form builder with live preview, consent capture, source tracking and local CRM test submissions
 - Standalone customer enquiry page (`lead-form.html`) with live configuration, Turnstile widget and secure submission status
 - Analytics overview with GA4 and Looker Studio placeholders
+- Channel spend, cost-per-lead, estimated ROI, conversion funnel, source performance and CSV analytics report
 - Interactive charts and scenario-based lead/revenue predictions with CSV export
 - Local CSV import (`month, leads, revenue, visits`) with validation and trend regression
 - Combined technical and fundamental scoring for adjusted business forecasts
