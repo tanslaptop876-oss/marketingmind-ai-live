@@ -6,6 +6,13 @@ ENVIRONMENT=development
 # Supabase public project configuration. Keep service-role keys server-only.
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-public-anon-key
+SUPABASE_SERVICE_ROLE_KEY=replace-with-server-secret
+MARKETINGMIND_WORKSPACE_ID=00000000-0000-4000-8000-000000000000
+
+# Public lead capture. Use comma-separated exact origins when needed.
+LEAD_FORM_ORIGIN=https://your-business.example
+TURNSTILE_SITE_KEY=replace-with-public-site-key
+TURNSTILE_SECRET_KEY=replace-with-server-secret
 
 # Server-side AI provider key.
 OPENAI_API_KEY=replace-with-server-secret
