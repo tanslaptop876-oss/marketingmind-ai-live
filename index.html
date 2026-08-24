@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="MarketingMind AI — a practical digital marketing workspace for local businesses." />
   <meta name="theme-color" content="#17130f" />
+  <meta name="application-name" content="MarketingMind AI" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>MarketingMind AI — Studio Salvadore</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
@@ -31,6 +36,7 @@
         <div class="top-actions">
           <button class="search-trigger" id="searchButton"><span>⌕</span> Search <kbd>⌘ K</kbd></button>
           <button class="icon-button notice-button" title="Notifications">♢<i></i></button>
+          <button class="ghost-button" id="installApp" hidden>Install app</button>
           <button class="primary-button" data-action="create-content">+ Create</button>
         </div>
       </header>
