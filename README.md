@@ -18,6 +18,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - Combined technical and fundamental scoring for adjusted business forecasts
 - Dynamic local credit/API usage history with free-first guardrails
 - Responsive layout for desktop, tablet, and mobile
+- Installable PWA with branded icon and offline app-shell support
 
 This is a front-end MVP. Demo data and user edits are stored in `localStorage`; no customer data is sent anywhere. Provider connections are explicitly marked as placeholders.
 
