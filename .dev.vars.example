@@ -9,6 +9,7 @@ SUPABASE_ANON_KEY=your-public-anon-key
 
 # Server-side AI provider key.
 OPENAI_API_KEY=replace-with-server-secret
+OPENAI_MODEL=gpt-5.4-mini
 
 # Google OAuth application and GA4 property.
 GOOGLE_CLIENT_ID=replace-with-client-id
