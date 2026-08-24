@@ -1,0 +1,14 @@
+{
+  "name": "MarketingMind AI",
+  "short_name": "MarketingMind",
+  "description": "A local-first digital marketing workspace for small businesses.",
+  "start_url": "/#dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f1e9",
+  "theme_color": "#17130f",
+  "icons": [
+    {"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
+
