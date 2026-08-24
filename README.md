@@ -61,6 +61,10 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 6. Connect GA4 Data API and embed a Looker Studio report.
 7. Add roles, consent records, audit logs, backups, and rate limits before real customer use.
 
+## Optional Supabase backend starter
+
+`supabase/schema.sql` creates an authentication-ready database for workspaces, leads, appointments, posts, usage events, and historical forecast points. It enables Row Level Security so authenticated users can access only workspaces they own. Run it in a new Supabase project's SQL editor, then connect the frontend through server-side or authenticated API code. Never place a Supabase service-role key in browser files.
+
 ## Files
 
 - `index.html` — accessible app shell and page metadata
