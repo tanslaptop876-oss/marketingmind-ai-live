@@ -71,6 +71,8 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `functions/api/integrations.js` provides `GET /api/integrations`. It reports only whether the required server environment variables are present; it never returns credentials. The Business Settings screen uses it for the live Integration Readiness card.
 
+`functions/api/generate.js` provides validated server-side `POST /api/generate` content generation through the OpenAI Responses API. It never returns the API key, does not store generated responses, caps request/output size, and tells the frontend to use the local generator when the provider is unavailable. Set `OPENAI_MODEL` to control the server model; the template default is `gpt-5.4-mini`.
+
 ### Cloudflare environment variable names
 
 Use `.dev.vars.example` only as a naming template. In Cloudflare Pages, add production values under **Settings → Environment variables**:
@@ -78,6 +80,7 @@ Use `.dev.vars.example` only as a naming template. In Cloudflare Pages, add prod
 - `ENVIRONMENT` — normally `production`
 - `SUPABASE_URL` and `SUPABASE_ANON_KEY` — cloud database and authenticated client access
 - `OPENAI_API_KEY` — server-side AI generation only
+- `OPENAI_MODEL` — Responses API model used by the server route
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
 - `GA4_PROPERTY_ID` — Google Analytics reporting property
 - `META_APP_ID` and `META_APP_SECRET` — Meta publishing OAuth
