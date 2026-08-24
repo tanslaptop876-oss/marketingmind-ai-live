@@ -13,6 +13,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - CRM leads with live pipeline metrics, status updates and local record management
 - Appointment booking, confirmation/completion states, expected value and optional CRM capture
 - No-code website lead form builder with live preview, consent capture, source tracking and local CRM test submissions
+- Standalone customer enquiry page (`lead-form.html`) with live configuration, Turnstile widget and secure submission status
 - Analytics overview with GA4 and Looker Studio placeholders
 - Interactive charts and scenario-based lead/revenue predictions with CSV export
 - Local CSV import (`month, leads, revenue, visits`) with validation and trend regression
@@ -75,6 +76,8 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 `functions/api/generate.js` provides validated server-side `POST /api/generate` content generation through the OpenAI Responses API. It never returns the API key, does not store generated responses, caps request/output size, and tells the frontend to use the local generator when the provider is unavailable. Set `OPENAI_MODEL` to control the server model; the template default is `gpt-5.4-mini`.
 
 `functions/api/leads.js` provides restricted public `POST /api/leads` capture. It validates origin, payload size, contact consent, email format, a honeypot field, and a Cloudflare Turnstile token before using the server-only Supabase service-role key to insert a lead. The endpoint returns `503 not_configured` until every required secret is present. Add rate-limit monitoring before a high-volume production launch.
+
+`functions/api/form-config.js` provides safe public copy, service choices, the Turnstile site key and readiness state to `lead-form.html`. It never returns server secrets. Set the optional `FORM_*` variables to customize the standalone form without rebuilding the site.
 
 ### Cloudflare environment variable names
 
