@@ -134,4 +134,9 @@ $('#searchButton').onclick=()=>{let d=modal('Jump to a module',`<div class="fiel
 window.addEventListener('hashchange',()=>route(location.hash.slice(1)));
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#searchButton').click()}});
 renderNav();route(location.hash.slice(1)||'dashboard');
+let installPrompt=null;
+window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;$('#installApp').hidden=false});
+$('#installApp').onclick=async()=>{if(!installPrompt)return;await installPrompt.prompt();installPrompt=null;$('#installApp').hidden=true};
+window.addEventListener('appinstalled',()=>toast('MarketingMind installed'));
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('/sw.js').catch(()=>{});
 
