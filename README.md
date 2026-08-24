@@ -74,12 +74,18 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `functions/api/generate.js` provides validated server-side `POST /api/generate` content generation through the OpenAI Responses API. It never returns the API key, does not store generated responses, caps request/output size, and tells the frontend to use the local generator when the provider is unavailable. Set `OPENAI_MODEL` to control the server model; the template default is `gpt-5.4-mini`.
 
+`functions/api/leads.js` provides restricted public `POST /api/leads` capture. It validates origin, payload size, contact consent, email format, a honeypot field, and a Cloudflare Turnstile token before using the server-only Supabase service-role key to insert a lead. The endpoint returns `503 not_configured` until every required secret is present. Add rate-limit monitoring before a high-volume production launch.
+
 ### Cloudflare environment variable names
 
 Use `.dev.vars.example` only as a naming template. In Cloudflare Pages, add production values under **Settings → Environment variables**:
 
 - `ENVIRONMENT` — normally `production`
 - `SUPABASE_URL` and `SUPABASE_ANON_KEY` — cloud database and authenticated client access
+- `SUPABASE_SERVICE_ROLE_KEY` — encrypted server-only key for the lead capture function
+- `MARKETINGMIND_WORKSPACE_ID` — UUID receiving website form leads
+- `LEAD_FORM_ORIGIN` — exact allowed website origin; comma-separate additional origins
+- `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — public widget key and encrypted server validation key
 - `OPENAI_API_KEY` — server-side AI generation only
 - `OPENAI_MODEL` — Responses API model used by the server route
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
