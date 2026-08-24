@@ -4,3 +4,6 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   X-Frame-Options: SAMEORIGIN
 
+/sw.js
+  Cache-Control: no-cache
+
