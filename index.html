@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="MarketingMind AI — a practical digital marketing workspace for local businesses." />
+  <meta name="theme-color" content="#17130f" />
+  <title>MarketingMind AI — Studio Salvadore</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" data-route="dashboard" aria-label="MarketingMind home">
+        <span class="brand-mark">M</span><span><strong>MarketingMind</strong><small>AI workspace</small></span>
+      </a>
+      <nav id="mainNav" aria-label="Main navigation"></nav>
+      <div class="sidebar-footer">
+        <div class="workspace-mini"><span class="avatar">SS</span><span><strong>Studio Salvadore</strong><small>Salon & Spa</small></span></div>
+        <button class="icon-button" id="collapseButton" title="Collapse navigation">‹</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="mobile-menu icon-button" id="menuButton" aria-label="Open menu">☰</button>
+        <div class="breadcrumbs"><span>Workspace</span><b>/</b><strong id="pageCrumb">Overview</strong></div>
+        <div class="top-actions">
+          <button class="search-trigger" id="searchButton"><span>⌕</span> Search <kbd>⌘ K</kbd></button>
+          <button class="icon-button notice-button" title="Notifications">♢<i></i></button>
+          <button class="primary-button" data-action="create-content">+ Create</button>
+        </div>
+      </header>
+      <div class="page" id="app" tabindex="-1"></div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <dialog id="modal"><form method="dialog" id="modalContent"></form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
+
