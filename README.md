@@ -71,6 +71,19 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `functions/api/integrations.js` provides `GET /api/integrations`. It reports only whether the required server environment variables are present; it never returns credentials. The Business Settings screen uses it for the live Integration Readiness card.
 
+### Cloudflare environment variable names
+
+Use `.dev.vars.example` only as a naming template. In Cloudflare Pages, add production values under **Settings → Environment variables**:
+
+- `ENVIRONMENT` — normally `production`
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY` — cloud database and authenticated client access
+- `OPENAI_API_KEY` — server-side AI generation only
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
+- `GA4_PROPERTY_ID` — Google Analytics reporting property
+- `META_APP_ID` and `META_APP_SECRET` — Meta publishing OAuth
+
+Mark private keys and client secrets as encrypted secrets. Never add a Supabase service-role key, OpenAI key, Google client secret, or Meta app secret to `app.js`, GitHub, or any public browser file.
+
 ## Files
 
 - `index.html` — accessible app shell and page metadata
