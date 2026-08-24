@@ -5,6 +5,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 ## Included
 
 - Dashboard with marketing health and activity
+- Dynamic Action Center prioritizing CRM, appointments, content, local SEO, reviews, analytics and form publishing
 - Editable business profile (saved in browser storage)
 - Multilingual local content generator with editable drafts, planner save, and scheduling
 - Social scheduling queue with edit, reschedule, status and delete controls
