@@ -69,6 +69,8 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `functions/api/health.js` provides a same-origin `GET /api/health` endpoint on Cloudflare Pages. It returns application, version, runtime, environment, and timestamp data with no-store and nosniff headers. Use this endpoint as the health check for future authenticated Supabase and AI API routes.
 
+`functions/api/integrations.js` provides `GET /api/integrations`. It reports only whether the required server environment variables are present; it never returns credentials. The Business Settings screen uses it for the live Integration Readiness card.
+
 ## Files
 
 - `index.html` — accessible app shell and page metadata
