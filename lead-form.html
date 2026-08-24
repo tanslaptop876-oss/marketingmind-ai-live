@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#17130f">
+  <title>Book a consultation — Studio Salvadore</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="lead-form.css">
+</head>
+<body>
+  <main class="capture-layout">
+    <section class="capture-story">
+      <a class="capture-brand" href="/" aria-label="MarketingMind home"><span id="brandInitial">S</span><div><strong id="businessName">Studio Salvadore Salon & Spa</strong><small id="businessCategory">Salon & Spa</small></div></a>
+      <div class="story-copy"><div class="eyebrow">A little time for you</div><h1>Personalised care starts with a conversation.</h1><p>Share what you need and our team will help you choose the right salon or spa experience.</p><ul><li>Thoughtful consultation</li><li>Convenient appointment request</li><li>Your information stays private</li></ul></div>
+      <small class="powered">Secure form powered by MarketingMind AI</small>
+    </section>
+    <section class="capture-panel">
+      <div class="setup-notice" id="setupNotice" role="status">Checking online booking availability…</div>
+      <div id="formWrap">
+        <div class="form-kicker">Enquiry form</div>
+        <h2 id="formTitle">Book a consultation</h2>
+        <p id="formIntro">Tell us what you are looking for and our team will contact you to confirm a convenient time.</p>
+        <form id="publicLeadForm">
+          <div class="field"><label for="leadName">Your name *</label><input id="leadName" name="name" required maxlength="100" autocomplete="name"></div>
+          <div class="field-row"><div class="field"><label for="leadPhone">Phone *</label><input id="leadPhone" name="phone" type="tel" required maxlength="40" autocomplete="tel"></div><div class="field"><label for="leadEmail">Email</label><input id="leadEmail" name="email" type="email" maxlength="160" autocomplete="email"></div></div>
+          <div class="field"><label for="leadService">Service</label><select id="leadService" name="service"></select></div>
+          <div class="field"><label for="leadDate">Preferred date</label><input id="leadDate" name="preferredDate" type="date"></div>
+          <div class="field"><label for="leadMessage">How can we help?</label><textarea id="leadMessage" name="message" maxlength="1000" placeholder="Add any preference or question"></textarea></div>
+          <div class="website-field" aria-hidden="true"><label for="leadWebsite">Website</label><input id="leadWebsite" name="website" tabindex="-1" autocomplete="off"></div>
+          <label class="consent"><input id="leadConsent" name="consent" type="checkbox" required> I agree to be contacted about this enquiry.</label>
+          <div id="turnstileWidget"></div>
+          <button id="submitLead" type="submit" disabled>Setup in progress</button>
+          <small class="privacy">Your details are used only to respond to this enquiry. No payment is collected here.</small>
+        </form>
+      </div>
+      <div class="success-state" id="successState" hidden><span>✓</span><h2>Request received</h2><p id="successMessage">Thank you — our team will contact you shortly.</p><button id="sendAnother" type="button">Send another request</button></div>
+    </section>
+  </main>
+  <script src="lead-form.js"></script>
+</body>
+</html>
+
