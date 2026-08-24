@@ -51,6 +51,7 @@ Then open the local URL shown in the terminal.
 Workspace data is currently stored in the browser. Use **Business settings → Export backup** to download a portable JSON copy, and **Import backup** to restore it on another browser or device.
 
 The CRM can import and export lead CSV files for Excel or Google Sheets. Appointments can also be exported as CSV for daily operations and reporting.
+Lead records support phone numbers, dated follow-ups, notes, pipeline status, source, and service interest.
 
 1. Add authentication and a database (Supabase free tier is a practical fit).
 2. Move business, leads, appointments, and posts from browser storage to the database.
