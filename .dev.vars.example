@@ -14,6 +14,16 @@ LEAD_FORM_ORIGIN=https://your-business.example
 TURNSTILE_SITE_KEY=replace-with-public-site-key
 TURNSTILE_SECRET_KEY=replace-with-server-secret
 
+# Safe public form copy returned by /api/form-config.
+FORM_BUSINESS_NAME=Studio Salvadore Salon & Spa
+FORM_BUSINESS_CATEGORY=Salon & Spa
+FORM_BUSINESS_PHONE=+91 98765 43210
+FORM_TITLE=Book a consultation
+FORM_INTRO=Tell us what you are looking for and our team will contact you to confirm a convenient time.
+FORM_SERVICES=Haircut,Hair colour,Hair spa,Bridal package,Skin care,Spa ritual
+FORM_BUTTON_LABEL=Request appointment
+FORM_SUCCESS_MESSAGE=Thank you — our team will contact you shortly.
+
 # Server-side AI provider key.
 OPENAI_API_KEY=replace-with-server-secret
 OPENAI_MODEL=gpt-5.4-mini
