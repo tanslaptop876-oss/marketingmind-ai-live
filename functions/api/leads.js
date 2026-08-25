@@ -63,7 +63,7 @@ export async function onRequestPost(context) {
   const supabaseUrl = String(env.SUPABASE_URL).replace(/\/$/, '');
   let stored;
   try {
-    stored = await fetch(`${supabaseUrl}/rest/v1/leads`, {
+    stored = await fetch(`${supabaseUrl}/rest/v1/mm_leads`, {
       method: 'POST',
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
