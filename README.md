@@ -11,6 +11,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - Social scheduling queue with edit, reschedule, status and delete controls
 - Publishing preflight with platform limits, overdue/conflict detection, post previews and CSV/calendar export
 - SEO Growth workspace with keyword ideas, opportunity scoring, competitor gap readiness and backlink pipeline tracking
+- Creator Media Studio with consented voice profiles, browser voice previews, text-to-image briefs and a reusable Asset Library
 - Basic SEO audit and Google Business/local SEO checklist
 - Secure live-URL SEO audit for title, description, H1, canonical, viewport, ALT coverage, schema, indexability and language
 - Prioritized SEO fix plan, business-aware metadata generator and downloadable audit report
