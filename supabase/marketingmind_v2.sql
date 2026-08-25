@@ -11,7 +11,8 @@ create table if not exists public.mm_forecast_points (id bigint generated always
 create index if not exists mm_leads_workspace_idx on public.mm_leads(workspace_id);
 create index if not exists mm_appointments_workspace_starts_idx on public.mm_appointments(workspace_id,starts_at);
 create index if not exists mm_posts_workspace_publish_idx on public.mm_posts(workspace_id,publish_at);
-create or replace function public.mm_owns_workspace(target uuid) returns boolean language sql stable security definer set search_path=public as $$ select exists(select 1 from public.mm_workspaces w where w.id=target and w.owner_id=auth.uid()) $$;
+create index if not exists mm_workspaces_owner_idx on public.mm_workspaces(owner_id);
+create index if not exists mm_usage_workspace_idx on public.mm_usage_events(workspace_id);
 
 alter table public.mm_workspaces enable row level security;
 alter table public.mm_leads enable row level security;
@@ -19,12 +20,12 @@ alter table public.mm_appointments enable row level security;
 alter table public.mm_posts enable row level security;
 alter table public.mm_usage_events enable row level security;
 alter table public.mm_forecast_points enable row level security;
-create policy "mm owners manage workspaces" on public.mm_workspaces for all using(owner_id=auth.uid()) with check(owner_id=auth.uid());
-create policy "mm owners manage leads" on public.mm_leads for all using(public.mm_owns_workspace(workspace_id)) with check(public.mm_owns_workspace(workspace_id));
-create policy "mm owners manage appointments" on public.mm_appointments for all using(public.mm_owns_workspace(workspace_id)) with check(public.mm_owns_workspace(workspace_id));
-create policy "mm owners manage posts" on public.mm_posts for all using(public.mm_owns_workspace(workspace_id)) with check(public.mm_owns_workspace(workspace_id));
-create policy "mm owners manage usage" on public.mm_usage_events for all using(public.mm_owns_workspace(workspace_id)) with check(public.mm_owns_workspace(workspace_id));
-create policy "mm owners manage forecasts" on public.mm_forecast_points for all using(public.mm_owns_workspace(workspace_id)) with check(public.mm_owns_workspace(workspace_id));
+create policy "mm owners manage workspaces" on public.mm_workspaces for all to authenticated using(owner_id=(select auth.uid())) with check(owner_id=(select auth.uid()));
+create policy "mm owners manage leads" on public.mm_leads for all to authenticated using(exists(select 1 from public.mm_workspaces w where w.id=mm_leads.workspace_id and w.owner_id=(select auth.uid()))) with check(exists(select 1 from public.mm_workspaces w where w.id=mm_leads.workspace_id and w.owner_id=(select auth.uid())));
+create policy "mm owners manage appointments" on public.mm_appointments for all to authenticated using(exists(select 1 from public.mm_workspaces w where w.id=mm_appointments.workspace_id and w.owner_id=(select auth.uid()))) with check(exists(select 1 from public.mm_workspaces w where w.id=mm_appointments.workspace_id and w.owner_id=(select auth.uid())));
+create policy "mm owners manage posts" on public.mm_posts for all to authenticated using(exists(select 1 from public.mm_workspaces w where w.id=mm_posts.workspace_id and w.owner_id=(select auth.uid()))) with check(exists(select 1 from public.mm_workspaces w where w.id=mm_posts.workspace_id and w.owner_id=(select auth.uid())));
+create policy "mm owners manage usage" on public.mm_usage_events for all to authenticated using(exists(select 1 from public.mm_workspaces w where w.id=mm_usage_events.workspace_id and w.owner_id=(select auth.uid()))) with check(exists(select 1 from public.mm_workspaces w where w.id=mm_usage_events.workspace_id and w.owner_id=(select auth.uid())));
+create policy "mm owners manage forecasts" on public.mm_forecast_points for all to authenticated using(exists(select 1 from public.mm_workspaces w where w.id=mm_forecast_points.workspace_id and w.owner_id=(select auth.uid()))) with check(exists(select 1 from public.mm_workspaces w where w.id=mm_forecast_points.workspace_id and w.owner_id=(select auth.uid())));
 grant usage on schema public to authenticated;
 grant select,insert,update,delete on public.mm_workspaces,public.mm_leads,public.mm_appointments,public.mm_posts,public.mm_usage_events,public.mm_forecast_points to authenticated;
 grant usage,select on all sequences in schema public to authenticated;
