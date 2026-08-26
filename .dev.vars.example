@@ -39,3 +39,6 @@ META_APP_SECRET=replace-with-app-secret
 META_REDIRECT_URI=https://marketingmind-ai-live.pages.dev/api/meta-callback
 # Keep disabled until Meta app review and encrypted token storage are complete.
 META_CONNECT_ENABLED=false
+META_GRAPH_VERSION=v23.0
+# Generate at least 32 random characters and store only as an encrypted Cloudflare secret.
+META_TOKEN_ENCRYPTION_KEY=replace-with-long-random-secret
