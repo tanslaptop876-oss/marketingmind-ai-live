@@ -8,7 +8,7 @@ export async function onRequestGet(context) {
     ok: true,
     ready,
     business: {
-      name: env.FORM_BUSINESS_NAME || 'Studio Salvadore Salon & Spa',
+      name: env.FORM_BUSINESS_NAME || 'Studio Salvador Salon & Holistic Health Spa',
       category: env.FORM_BUSINESS_CATEGORY || 'Salon & Spa',
       phone: env.FORM_BUSINESS_PHONE || ''
     },
@@ -23,4 +23,3 @@ export async function onRequestGet(context) {
     endpoint: '/api/leads'
   }, { headers: { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 }
-
