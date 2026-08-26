@@ -12,6 +12,12 @@ create index if not exists mm_leads_workspace_idx on public.mm_leads(workspace_i
 create index if not exists mm_appointments_workspace_starts_idx on public.mm_appointments(workspace_id,starts_at);
 create index if not exists mm_posts_workspace_publish_idx on public.mm_posts(workspace_id,publish_at);
 create index if not exists mm_workspaces_owner_idx on public.mm_workspaces(owner_id);
+create unique index if not exists mm_workspaces_owner_unique on public.mm_workspaces(owner_id);
+create table if not exists public.mm_provider_connections (id uuid primary key default gen_random_uuid(),owner_id uuid not null references auth.users(id) on delete cascade,provider text not null check(provider in ('meta')),encrypted_credentials text not null,account_summary jsonb not null default '[]'::jsonb,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),unique(owner_id,provider));
+alter table public.mm_provider_connections enable row level security;
+revoke all on table public.mm_provider_connections from anon, authenticated;
+grant select, insert, update, delete on table public.mm_provider_connections to service_role;
+create index if not exists mm_provider_connections_owner_idx on public.mm_provider_connections(owner_id);
 create index if not exists mm_usage_workspace_idx on public.mm_usage_events(workspace_id);
 
 alter table public.mm_workspaces enable row level security;
@@ -29,4 +35,3 @@ create policy "mm owners manage forecasts" on public.mm_forecast_points for all 
 grant usage on schema public to authenticated;
 grant select,insert,update,delete on public.mm_workspaces,public.mm_leads,public.mm_appointments,public.mm_posts,public.mm_usage_events,public.mm_forecast_points to authenticated;
 grant usage,select on all sequences in schema public to authenticated;
-
