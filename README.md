@@ -128,3 +128,5 @@ Mark private keys and client secrets as encrypted secrets. Never add a Supabase 
 
 Do not place real API keys in `app.js`. Use a serverless function or backend secret store for production integrations.
 
+
+<!-- Cloudflare configuration refresh: 2026-08-26 -->
