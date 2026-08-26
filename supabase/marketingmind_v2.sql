@@ -15,7 +15,7 @@ create index if not exists mm_workspaces_owner_idx on public.mm_workspaces(owner
 create unique index if not exists mm_workspaces_owner_unique on public.mm_workspaces(owner_id);
 create table if not exists public.mm_provider_connections (id uuid primary key default gen_random_uuid(),owner_id uuid not null references auth.users(id) on delete cascade,provider text not null check(provider in ('meta','google_business')),encrypted_credentials text not null,account_summary jsonb not null default '[]'::jsonb,created_at timestamptz not null default now(),updated_at timestamptz not null default now(),unique(owner_id,provider));
 alter table public.mm_provider_connections drop constraint if exists mm_provider_connections_provider_check;
-alter table public.mm_provider_connections add constraint mm_provider_connections_provider_check check(provider in ('meta','google_business'));
+alter table public.mm_provider_connections add constraint mm_provider_connections_provider_check check(provider in ('meta','google_business','google_analytics'));
 alter table public.mm_provider_connections enable row level security;
 revoke all on table public.mm_provider_connections from anon, authenticated;
 grant select, insert, update, delete on table public.mm_provider_connections to service_role;
