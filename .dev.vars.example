@@ -36,6 +36,11 @@ GOOGLE_CONNECT_ENABLED=false
 GA4_PROPERTY_ID=123456789
 GA4_REDIRECT_URI=https://marketingmind-ai-live.pages.dev/api/ga4-callback
 GA4_CONNECT_ENABLED=false
+YOUTUBE_REDIRECT_URI=https://marketingmind-ai-live.pages.dev/api/youtube-callback
+# Comma-separated exact HTTPS hostnames that the server may fetch videos from.
+YOUTUBE_VIDEO_SOURCE_HOSTS=media.your-business.example
+# Keep disabled until YouTube Data API, OAuth consent and upload restrictions are reviewed.
+YOUTUBE_CONNECT_ENABLED=false
 
 # Meta application OAuth configuration.
 META_APP_ID=replace-with-app-id
@@ -48,3 +53,4 @@ META_GRAPH_VERSION=v23.0
 META_TOKEN_ENCRYPTION_KEY=replace-with-long-random-secret
 # Shared AES-GCM key for provider tokens; use 32+ random characters and keep it server-only.
 PROVIDER_TOKEN_ENCRYPTION_KEY=replace-with-long-random-secret
+
