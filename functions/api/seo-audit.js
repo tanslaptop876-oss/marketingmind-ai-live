@@ -32,7 +32,7 @@ async function fetchPage(initial){
 function analyze(html,url){
   const title=decode(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1]||''),tags=[...html.matchAll(/<meta\b[^>]*>/gi)].map(match=>attrs(match[0])),links=[...html.matchAll(/<link\b[^>]*>/gi)].map(match=>attrs(match[0]));
   const description=tags.find(tag=>tag.name?.toLowerCase()==='description')?.content||'',viewport=tags.find(tag=>tag.name?.toLowerCase()==='viewport')?.content||'',robots=(tags.find(tag=>tag.name?.toLowerCase()==='robots')?.content||'').toLowerCase(),canonical=links.find(tag=>(tag.rel||'').toLowerCase().split(/\s+/).includes('canonical'))?.href||'';
-  const h1Count=(html.match(/<h1\b[^>]*>/gi)||[]).length,images=[...html.matchAll(/<img\b[^>]*>/gi)].map(match=>attrs(match[0])),withAlt=images.filter(image=>typeof image.alt==='string'&&image.alt.trim()).length,altCoverage=images.length?Math.round(withAlt/images.length*100):100,schemaCount=(html.match(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>/gi)||[]).length,lang=attrs(html.match(/<html\b[^>]*>/i)?.[0]||'').lang||'';
+  const h1Count=(html.match(/<h1\b[^>]*>/gi)||[]).length,images=[...html.matchAll(/<img\b[^>]*>/gi)].map(match=>attrs(match[0])),withAlt=images.filter(image=>typeof image.alt==='string'&&image.alt.trim()).length,altCoverage=images.length?Math.round(withAlt/images.length*100):100,schemaBlocks=[...html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map(match=>match[1]),schemaCount=schemaBlocks.length,hasLocalBusiness=schemaBlocks.some(block=>/["'](?:LocalBusiness|BeautySalon)["']/i.test(block)),lang=attrs(html.match(/<html\b[^>]*>/i)?.[0]||'').lang||'';
   const checks=[
     ['Title tag',title.length>=10&&title.length<=60,title?`${title.length} characters · ${title}`:'Missing title tag',15],
     ['Meta description',description.length>=50&&description.length<=160,description?`${description.length} characters`:'Missing meta description',15],
@@ -40,12 +40,13 @@ function analyze(html,url){
     ['Mobile viewport',Boolean(viewport),viewport||'Missing viewport meta tag',10],
     ['Canonical URL',Boolean(canonical),canonical||'Missing canonical link',10],
     ['Image ALT text',altCoverage===100,images.length?`${withAlt}/${images.length} images have descriptive ALT text`:'No images found',15],
-    ['JSON-LD schema',schemaCount>0,`${schemaCount} JSON-LD block${schemaCount===1?'':'s'} found`,10],
+    ['JSON-LD schema',schemaCount>0,`${schemaCount} JSON-LD block${schemaCount===1?'':'s'} found`,5],
+    ['LocalBusiness schema',hasLocalBusiness,hasLocalBusiness?'Local business entity found in server HTML':'No LocalBusiness or BeautySalon entity found in server HTML',5],
     ['Indexability',!robots.includes('noindex'),robots||'No noindex directive found',5],
     ['HTML language',Boolean(lang),lang?`Language set to ${lang}`:'Missing lang attribute',5]
   ];
   const score=checks.reduce((sum,[,ok,,weight])=>sum+(ok?weight:0),0);
-  return {score,checks:checks.map(([name,ok,detail])=>[name,ok,detail]),summary:{title,descriptionLength:description.length,h1Count,imageCount:images.length,altCoverage,schemaCount,canonical,lang},url}
+  return {score,checks:checks.map(([name,ok,detail])=>[name,ok,detail]),summary:{title,descriptionLength:description.length,h1Count,imageCount:images.length,altCoverage,schemaCount,hasLocalBusiness,canonical,lang},url}
 }
 
 export async function onRequestPost(context){
@@ -57,4 +58,3 @@ export async function onRequestPost(context){
   try{const page=await fetchPage(target),audit=analyze(page.html,page.url);return json({ok:true,audit})}
   catch(error){const allowed=['page_too_large','not_html','too_many_redirects','unsafe_redirect'];const code=allowed.includes(error.message)?error.message:error.message.startsWith('site_status_')?error.message:'fetch_failed';return json({ok:false,error:code},422)}
 }
-
