@@ -130,3 +130,5 @@ Do not place real API keys in `app.js`. Use a serverless function or backend sec
 
 
 <!-- Cloudflare configuration refresh: 2026-08-26 -->
+
+<!-- YouTube connector enabled: 2026-08-26 -->
