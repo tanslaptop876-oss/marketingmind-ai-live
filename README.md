@@ -85,6 +85,8 @@ Lead records support phone numbers, dated follow-ups, notes, pipeline status, so
 
 `functions/api/image-generate.js` provides server-side `POST /api/image-generate` image generation. It uses a Cloudflare Workers AI binding named `AI`, returns a downloadable image to the browser, and never exposes provider credentials. The default model is FLUX.1 Schnell; `IMAGE_MODEL` can override it.
 
+`functions/api/auth.js` and `functions/api/cloud-state.js` provide MarketingMind account sign-in plus explicit cloud save/load. Supabase access and refresh tokens stay in secure, HTTP-only cookies; the browser never stores provider keys or Supabase tokens. Local browser data remains available before sign-in, and cloud loading asks for confirmation before replacing it.
+
 `functions/api/leads.js` provides restricted public `POST /api/leads` capture. It validates origin, payload size, contact consent, email format, a honeypot field, and a Cloudflare Turnstile token before using the server-only Supabase service-role key to insert a lead. The endpoint returns `503 not_configured` until every required secret is present. Add rate-limit monitoring before a high-volume production launch.
 
 `functions/api/form-config.js` provides safe public copy, service choices, the Turnstile site key and readiness state to `lead-form.html`. It never returns server secrets. Set the optional `FORM_*` variables to customize the standalone form without rebuilding the site.
@@ -107,6 +109,10 @@ For image generation, add a **Workers AI binding** under the production environm
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
 - `GA4_PROPERTY_ID` — Google Analytics reporting property
 - `META_APP_ID` and `META_APP_SECRET` — Meta publishing OAuth
+- `META_REDIRECT_URI` — exact production callback URL; keep `META_CONNECT_ENABLED=false` until app review and encrypted token storage are complete
+
+The prepared Meta connector requests only Page discovery/read and Facebook/Instagram publishing permissions. It is intentionally disabled by default and does not claim a live connection or store access tokens yet.
+The callback validates the short-lived OAuth state cookie but deliberately refuses to exchange an authorization code until encrypted, per-workspace token storage is implemented.
 
 Mark private keys and client secrets as encrypted secrets. Never add a Supabase service-role key, OpenAI key, Google client secret, or Meta app secret to `app.js`, GitHub, or any public browser file.
 
@@ -119,4 +125,3 @@ Mark private keys and client secrets as encrypted secrets. Never add a Supabase 
 ## Important security note
 
 Do not place real API keys in `app.js`. Use a serverless function or backend secret store for production integrations.
-
