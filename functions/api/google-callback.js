@@ -1,0 +1,18 @@
+import {apiHeaders,baseUrl} from '../_shared/supabase.js';
+import {open,seal} from '../_shared/provider-crypto.js';
+const json=(body,status=200,headers={})=>Response.json(body,{status,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff',...headers}}),cookies=request=>Object.fromEntries(String(request.headers.get('cookie')||'').split(';').map(value=>value.trim().split(/=(.*)/s)).filter(parts=>parts[0]));
+export async function onRequestGet(context){
+  const url=new URL(context.request.url),clear='mm_google_oauth=; Path=/api; HttpOnly; Secure; SameSite=Lax; Max-Age=0';let oauth;
+  try{oauth=await open(decodeURIComponent(cookies(context.request).mm_google_oauth||''),context.env.PROVIDER_TOKEN_ENCRYPTION_KEY)}catch{return json({ok:false,error:'invalid_oauth_state'},403,{'set-cookie':clear})}
+  if(!url.searchParams.get('state')||oauth.state!==url.searchParams.get('state')||oauth.exp<Date.now())return json({ok:false,error:'invalid_oauth_state'},403,{'set-cookie':clear});const code=url.searchParams.get('code');if(!code)return json({ok:false,error:'missing_authorization_code'},400,{'set-cookie':clear});
+  try{
+    const tokenResponse=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:context.env.GOOGLE_CLIENT_ID,client_secret:context.env.GOOGLE_CLIENT_SECRET,redirect_uri:context.env.GOOGLE_REDIRECT_URI,grant_type:'authorization_code',code})}),token=await tokenResponse.json();if(!tokenResponse.ok||!token.access_token)throw new Error('token_exchange_failed');
+    const accountsResponse=await fetch('https://mybusinessaccountmanagement.googleapis.com/v1/accounts?pageSize=20',{headers:{authorization:`Bearer ${token.access_token}`}}),accountsData=await accountsResponse.json();if(!accountsResponse.ok)throw new Error('account_discovery_failed');const accounts=[];
+    for(const account of (accountsData.accounts||[])){
+      const fields='name,title,storefrontAddress,phoneNumbers,regularHours,websiteUri,categories,metadata',locationsResponse=await fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=${encodeURIComponent(fields)}&pageSize=100`,{headers:{authorization:`Bearer ${token.access_token}`}}),locationsData=await locationsResponse.json();accounts.push({name:account.name,accountName:account.accountName,type:account.type,role:account.role,locations:locationsResponse.ok?(locationsData.locations||[]):[]});
+    }
+    const encrypted=await seal({refreshToken:token.refresh_token||null,accessToken:token.access_token,expiresAt:Date.now()+Number(token.expires_in||3600)*1000,accounts},context.env.PROVIDER_TOKEN_ENCRYPTION_KEY),summary=accounts.map(account=>({name:account.name,accountName:account.accountName,locations:account.locations.map(location=>({name:location.name,title:location.title}))}));
+    const response=await fetch(`${baseUrl(context.env)}/rest/v1/mm_provider_connections?on_conflict=owner_id,provider`,{method:'POST',headers:{...apiHeaders({SUPABASE_ANON_KEY:context.env.SUPABASE_SERVICE_ROLE_KEY},context.env.SUPABASE_SERVICE_ROLE_KEY),prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({owner_id:oauth.userId,provider:'google_business',encrypted_credentials:encrypted,account_summary:summary,updated_at:new Date().toISOString()})});if(!response.ok)throw new Error('secure_storage_failed');return new Response(null,{status:302,headers:{location:'/#settings','cache-control':'private, no-store','set-cookie':clear}});
+  }catch(error){return json({ok:false,error:error.message||'google_connection_failed'},502,{'set-cookie':clear})}
+}
+export function onRequest(){return json({ok:false,error:'method_not_allowed'},405)}
