@@ -108,10 +108,13 @@ For image generation, add a **Workers AI binding** under the production environm
 - `IMAGE_MODEL` — optional Workers AI image model override; the built-in default is FLUX.1 Schnell
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
 - `GA4_PROPERTY_ID` — Google Analytics reporting property
+- `YOUTUBE_REDIRECT_URI`, `YOUTUBE_VIDEO_SOURCE_HOSTS`, and `YOUTUBE_CONNECT_ENABLED` — explicit YouTube channel authorization and trusted video-source allowlist
 - `META_APP_ID` and `META_APP_SECRET` — Meta publishing OAuth
 - `META_REDIRECT_URI` — exact production callback URL; keep `META_CONNECT_ENABLED=false` until app review and encrypted token storage are complete
 
 The Meta connector requests only Page discovery/read and Facebook/Instagram publishing permissions. OAuth state and workspace ownership travel in an encrypted, short-lived HttpOnly cookie. Page tokens are encrypted with AES-GCM before server-only Supabase storage; browser roles have no grants on the provider table. Publishing requires a signed-in workspace, an authorized Page ID and an explicit `confirm: true` request. Keep the connector disabled until Meta app review and production secrets are ready.
+
+The YouTube connector is separate from Google Business and GA4. It requests only YouTube upload and read-only channel discovery scopes, stores tokens encrypted in the server-only provider table, and requires an explicit confirmation for every upload. The URL-import MVP streams only from exact hostnames in `YOUTUBE_VIDEO_SOURCE_HOSTS`, rejects redirects, and caps uploads at 100 MB. Keep it disabled until the YouTube Data API, OAuth consent screen and project upload restrictions are ready; unaudited API projects may be limited to private videos.
 
 Mark private keys and client secrets as encrypted secrets. Never add a Supabase service-role key, OpenAI key, Google client secret, or Meta app secret to `app.js`, GitHub, or any public browser file.
 
@@ -124,3 +127,4 @@ Mark private keys and client secrets as encrypted secrets. Never add a Supabase 
 ## Important security note
 
 Do not place real API keys in `app.js`. Use a serverless function or backend secret store for production integrations.
+
