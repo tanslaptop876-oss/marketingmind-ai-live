@@ -15,9 +15,9 @@ TURNSTILE_SITE_KEY=replace-with-public-site-key
 TURNSTILE_SECRET_KEY=replace-with-server-secret
 
 # Safe public form copy returned by /api/form-config.
-FORM_BUSINESS_NAME=Studio Salvadore Salon & Spa
+FORM_BUSINESS_NAME=Studio Salvador Salon & Holistic Health Spa
 FORM_BUSINESS_CATEGORY=Salon & Spa
-FORM_BUSINESS_PHONE=+91 98765 43210
+FORM_BUSINESS_PHONE=+91 89108 48092
 FORM_TITLE=Book a consultation
 FORM_INTRO=Tell us what you are looking for and our team will contact you to confirm a convenient time.
 FORM_SERVICES=Haircut,Hair colour,Hair spa,Bridal package,Skin care,Spa ritual
@@ -36,4 +36,6 @@ GA4_PROPERTY_ID=123456789
 # Meta application OAuth configuration.
 META_APP_ID=replace-with-app-id
 META_APP_SECRET=replace-with-app-secret
-
+META_REDIRECT_URI=https://marketingmind-ai-live.pages.dev/api/meta-callback
+# Keep disabled until Meta app review and encrypted token storage are complete.
+META_CONNECT_ENABLED=false
