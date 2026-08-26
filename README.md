@@ -111,8 +111,7 @@ For image generation, add a **Workers AI binding** under the production environm
 - `META_APP_ID` and `META_APP_SECRET` — Meta publishing OAuth
 - `META_REDIRECT_URI` — exact production callback URL; keep `META_CONNECT_ENABLED=false` until app review and encrypted token storage are complete
 
-The prepared Meta connector requests only Page discovery/read and Facebook/Instagram publishing permissions. It is intentionally disabled by default and does not claim a live connection or store access tokens yet.
-The callback validates the short-lived OAuth state cookie but deliberately refuses to exchange an authorization code until encrypted, per-workspace token storage is implemented.
+The Meta connector requests only Page discovery/read and Facebook/Instagram publishing permissions. OAuth state and workspace ownership travel in an encrypted, short-lived HttpOnly cookie. Page tokens are encrypted with AES-GCM before server-only Supabase storage; browser roles have no grants on the provider table. Publishing requires a signed-in workspace, an authorized Page ID and an explicit `confirm: true` request. Keep the connector disabled until Meta app review and production secrets are ready.
 
 Mark private keys and client secrets as encrypted secrets. Never add a Supabase service-role key, OpenAI key, Google client secret, or Meta app secret to `app.js`, GitHub, or any public browser file.
 
