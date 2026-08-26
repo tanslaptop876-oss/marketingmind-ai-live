@@ -17,8 +17,11 @@ create table if not exists public.mm_provider_connections (id uuid primary key d
 alter table public.mm_provider_connections drop constraint if exists mm_provider_connections_provider_check;
 alter table public.mm_provider_connections add constraint mm_provider_connections_provider_check check(provider in ('meta','google_business','google_analytics','youtube'));
 alter table public.mm_provider_connections enable row level security;
-revoke all on table public.mm_provider_connections from anon, authenticated;
+revoke all on table public.mm_provider_connections from anon;
+grant select, insert, update, delete on table public.mm_provider_connections to authenticated;
 grant select, insert, update, delete on table public.mm_provider_connections to service_role;
+drop policy if exists "mm owners manage provider connections" on public.mm_provider_connections;
+create policy "mm owners manage provider connections" on public.mm_provider_connections for all to authenticated using(owner_id=(select auth.uid())) with check(owner_id=(select auth.uid()));
 create index if not exists mm_provider_connections_owner_idx on public.mm_provider_connections(owner_id);
 create index if not exists mm_usage_workspace_idx on public.mm_usage_events(workspace_id);
 
