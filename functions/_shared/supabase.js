@@ -10,7 +10,7 @@ export const json=(body,status=200,headers=new Headers())=>{
 
 export const configured=env=>Boolean(env.SUPABASE_URL&&env.SUPABASE_ANON_KEY);
 export const baseUrl=env=>String(env.SUPABASE_URL||'').replace(/\/$/,'');
-export const apiHeaders=(env,token)=>({apikey:env.SUPABASE_ANON_KEY,authorization:`Bearer ${token||env.SUPABASE_ANON_KEY}`,'content-type':'application/json'});
+export const apiHeaders=(env,token)=>{const key=String(env.SUPABASE_ANON_KEY||''),credential=String(token||key),headers={apikey:key,'content-type':'application/json'};if(credential&&!credential.startsWith('sb_secret_'))headers.authorization=`Bearer ${credential}`;return headers};
 export const sameOrigin=request=>request.headers.get('origin')===new URL(request.url).origin;
 
 const cookies=request=>Object.fromEntries(String(request.headers.get('cookie')||'').split(';').map(item=>item.trim().split(/=(.*)/s)).filter(parts=>parts[0]).map(([key,value])=>[key,decodeURIComponent(value||'')]));
