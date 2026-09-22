@@ -15,7 +15,26 @@ export async function onRequestPost(context){
     try{const session=await authenticated(context);if(session.access)await fetch(`${baseUrl(context.env)}/auth/v1/logout`,{method:'POST',headers:apiHeaders(context.env,session.access)})}catch{}
     clearSession(headers);return json({ok:true,user:null},200,headers);
   }
-  const email=String(input.email||'').trim().toLowerCase(),password=String(input.password||'');
+  const email=String(input.email||'').trim().toLowerCase(),password=String(input.password||''),accessToken=String(input.accessToken||'');
+  if(action==='recover'){
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json({ok:false,error:'invalid_email'},400);
+    const origin=new URL(context.request.url).origin,redirectTo=`${origin}/#reset-password`;
+    try{
+      const response=await fetch(`${baseUrl(context.env)}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`,{method:'POST',headers:apiHeaders(context.env),body:JSON.stringify({email})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)return json({ok:false,error:data.error_code||'recovery_failed',message:String(data.msg||data.message||'Password reset email could not be sent').slice(0,180)},response.status===429?429:400);
+      return json({ok:true},200);
+    }catch{return json({ok:false,error:'auth_unavailable'},503)}
+  }
+  if(action==='update_password'){
+    if(password.length<8||password.length>128||!accessToken)return json({ok:false,error:'invalid_recovery_request'},400);
+    try{
+      const response=await fetch(`${baseUrl(context.env)}/auth/v1/user`,{method:'PUT',headers:apiHeaders(context.env,accessToken),body:JSON.stringify({password})});
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)return json({ok:false,error:data.error_code||'password_update_failed',message:String(data.msg||data.message||'Password could not be updated').slice(0,180)},400);
+      return json({ok:true},200);
+    }catch{return json({ok:false,error:'auth_unavailable'},503)}
+  }
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||password.length<8||password.length>128)return json({ok:false,error:'invalid_credentials_format'},400);
   const endpoint=action==='signup'?'/auth/v1/signup':action==='signin'?'/auth/v1/token?grant_type=password':'';
   if(!endpoint)return json({ok:false,error:'invalid_action'},400);
