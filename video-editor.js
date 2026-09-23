@@ -1,100 +1,37 @@
 (() => {
-  'use strict';
-  const $ = id => document.getElementById(id);
-  const video = $('preview');
-  let inputURL, outputURL, recorder, stream, timer, busy = false, cancelled = false, previewing = false;
-  const status = text => { $('status').textContent = text; };
-  const range = () => {
-    const start = Number($('start').value), end = Number($('end').value);
-    if (!$('start').value || !$('end').value || !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end <= start || end > video.duration) throw Error('Choose a start before the end, within the video duration.');
-    return { start, end };
-  };
-  const seek = time => new Promise((resolve, reject) => {
-    if (Math.abs(video.currentTime - time) < 0.001) return resolve();
-    const cleanup = () => { clearTimeout(timeout); video.removeEventListener('seeked', done); video.removeEventListener('error', failed); };
-    const done = () => { cleanup(); resolve(); };
-    const failed = () => { cleanup(); reject(Error('Cannot seek this video. Try a different file.')); };
-    const timeout = setTimeout(failed, 10000);
-    video.addEventListener('seeked', done, { once: true });
-    video.addEventListener('error', failed, { once: true });
-    video.currentTime = time;
-  });
-  function resetOutput() {
-    $('download').hidden = true; $('download').removeAttribute('href');
-    if (outputURL) URL.revokeObjectURL(outputURL);
-    outputURL = null;
-  }
-  function cleanup() {
-    clearInterval(timer); video.pause(); stream?.getTracks().forEach(track => track.stop());
-    stream = null; recorder = null; busy = false; video.controls = true;
-    $('source').disabled = false; $('controls').disabled = !Number.isFinite(video.duration);
-    $('cancel').hidden = true; $('progress').hidden = true;
-  }
-  function abort(message) {
-    cancelled = true; status(message);
-    if (recorder && recorder.state !== 'inactive') recorder.stop();
-    else cleanup();
-  }
-  $('source').onchange = () => {
-    video.pause(); previewing = false; resetOutput(); $('controls').disabled = true;
-    if (inputURL) URL.revokeObjectURL(inputURL);
-    const file = $('source').files[0];
-    if (!file) { video.removeAttribute('src'); video.load(); return; }
-    inputURL = URL.createObjectURL(file); video.src = inputURL;
-    status('Reading video…');
-  };
-  video.onloadedmetadata = () => {
-    if (!Number.isFinite(video.duration) || video.duration <= 0) return status('This file has no usable duration. Try another video.');
-    $('start').value = '0'; $('end').value = String(video.duration);
-    $('start').max = $('end').max = String(video.duration); $('controls').disabled = false;
-    status(`Ready · ${video.duration.toFixed(2)} seconds. Preview your selection before exporting.`);
-  };
-  video.onerror = () => { if (busy) abort('Video decoding failed; export cancelled.'); else { $('controls').disabled = true; status('This browser cannot play this video. Try an MP4 or WebM file.'); } };
-  $('mute').onchange = () => { video.muted = $('mute').checked; resetOutput(); };
-  for (const id of ['start', 'end']) $(id).oninput = () => { previewing = false; video.pause(); resetOutput(); };
-  $('play').onclick = async () => {
-    try { const {start} = range(); await seek(start); video.muted = $('mute').checked; previewing = true; await video.play(); }
-    catch (error) { previewing = false; status(error.message); }
-  };
-  video.ontimeupdate = () => { if (previewing && video.currentTime >= Number($('end').value)) { video.pause(); previewing = false; } };
-  $('export').onclick = async () => {
-    if (busy) return;
-    try {
-      const {start, end} = range();
-      const capture = video.captureStream || video.mozCaptureStream;
-      if (!capture || !window.MediaRecorder) throw Error('Video export is not supported in this browser. Try desktop Chrome or Firefox.');
-      const mime = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find(type => MediaRecorder.isTypeSupported(type));
-      if (!mime) throw Error('No supported video export format was found.');
-      busy = true; cancelled = false; previewing = false; resetOutput();
-      $('controls').disabled = true; $('source').disabled = true; video.controls = false;
-      $('cancel').hidden = false; video.pause(); await seek(start);
-      if (cancelled) return cleanup();
-      video.muted = $('mute').checked; video.playbackRate = 1;
-      stream = capture.call(video);
-      if ($('mute').checked) stream.getAudioTracks().forEach(track => { stream.removeTrack(track); track.stop(); });
-      if (!stream.getVideoTracks().length) throw Error('This browser cannot capture this video. Try another browser or file.');
-      recorder = new MediaRecorder(stream, {mimeType: mime});
-      const chunks = [];
-      recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
-      recorder.onerror = () => abort('Recording failed; no finished export was created.');
-      recorder.onstop = () => {
-        if (!cancelled && chunks.length) {
-          const blob = new Blob(chunks, {type: mime}); outputURL = URL.createObjectURL(blob);
-          $('download').href = outputURL;
-          $('download').download = `marketingmind-edit.${mime.startsWith('video/mp4') ? 'mp4' : 'webm'}`;
-          $('download').hidden = false; status('Export ready. Download and review the video before publishing.');
-        } else if (!cancelled) status('No video data was recorded. Try another browser.');
-        cleanup();
-      };
-      recorder.start(250); await video.play();
-      $('progress').hidden = false; status('Exporting… Keep this tab visible.');
-      timer = setInterval(() => {
-        $('progress').value = Math.min(1, (video.currentTime - start) / (end - start));
-        if (video.currentTime >= end || video.ended) { clearInterval(timer); video.pause(); if (recorder?.state === 'recording') recorder.stop(); }
-      }, 40);
-    } catch (error) { abort(error.message); }
-  };
-  $('cancel').onclick = () => abort('Export cancelled. Your source video is unchanged.');
-  document.addEventListener('visibilitychange', () => { if (document.hidden && busy) abort('Export cancelled because the tab was hidden. Keep it visible and try again.'); });
-  window.addEventListener('beforeunload', event => { if (busy) { event.preventDefault(); event.returnValue = ''; } });
+'use strict';
+const $=id=>document.getElementById(id),video=$('preview'),canvas=$('renderCanvas'),music=$('musicPreview'),logo=$('logoPreview');
+let inputURL,outputURL,musicURL,logoURL,recorder,stream,timer,raf,busy=false,cancelled=false,previewing=false,clips=[],activeClip=0,captions=[],audioContext,audioDestination,videoGain,musicGain;
+const status=t=>$('status').textContent=t;
+const range=()=>{const start=Number($('start').value),end=Number($('end').value);if(!Number.isFinite(start)||!Number.isFinite(end)||start<0||end<=start||end>video.duration+.01)throw Error('Choose a valid start and end within the video duration.');return{start,end}};
+const seek=time=>new Promise((resolve,reject)=>{if(Math.abs(video.currentTime-time)<.01)return resolve();let timeout;const clean=()=>{clearTimeout(timeout);video.removeEventListener('seeked',done);video.removeEventListener('error',fail)},done=()=>{clean();resolve()},fail=()=>{clean();reject(Error('Cannot seek this video. Try another file.'))};timeout=setTimeout(fail,10000);video.addEventListener('seeked',done,{once:true});video.addEventListener('error',fail,{once:true});video.currentTime=time});
+function renderClips(){const box=$('clipList');if(!box)return;box.innerHTML=clips.map((c,i)=>`<button type="button" class="ghost-button" data-clip="${i}" style="margin:4px;${i===activeClip?'font-weight:700':''}">${i+1}. ${c.name}</button>`).join('');box.querySelectorAll('[data-clip]').forEach(b=>b.onclick=()=>loadClip(Number(b.dataset.clip)))}
+function loadClip(i,force=false){if(!clips[i]||(busy&&!force))return;activeClip=i;video.pause();previewing=false;resetOutput();if(inputURL)URL.revokeObjectURL(inputURL);inputURL=URL.createObjectURL(clips[i].file);video.src=inputURL;status(`Reading clip ${i+1} of ${clips.length}…`);renderClips()}
+function loadClipReady(i){return new Promise((resolve,reject)=>{loadClip(i,true);if(video.readyState>=1)return resolve();const done=()=>{clean();resolve()},fail=()=>{clean();reject(Error(`Cannot load clip ${i+1}.`))},clean=()=>{video.removeEventListener('loadedmetadata',done);video.removeEventListener('error',fail)};video.addEventListener('loadedmetadata',done,{once:true});video.addEventListener('error',fail,{once:true})})}
+function audioMix(){if(!window.AudioContext&&!window.webkitAudioContext)throw Error('Audio mixing is not supported in this browser.');if(!audioContext){audioContext=new (window.AudioContext||window.webkitAudioContext)();audioDestination=audioContext.createMediaStreamDestination();videoGain=audioContext.createGain();musicGain=audioContext.createGain();audioContext.createMediaElementSource(video).connect(videoGain).connect(audioDestination);audioContext.createMediaElementSource(music).connect(musicGain).connect(audioDestination)}videoGain.gain.value=$('mute').checked?0:Number($('originalVolume').value);musicGain.gain.value=$('music').files[0]?Number($('musicVolume').value):0;if(audioContext.state==='suspended')audioContext.resume();return audioDestination.stream}
+function resetOutput(){$('download').hidden=true;$('download').removeAttribute('href');if(outputURL)URL.revokeObjectURL(outputURL);outputURL=null}
+function cleanup(){clearInterval(timer);cancelAnimationFrame(raf);video.pause();music.pause();stream?.getTracks().forEach(t=>t.stop());stream=null;recorder=null;busy=false;video.controls=true;$('source').disabled=false;$('controls').disabled=!Number.isFinite(video.duration);$('cancel').hidden=true;$('progress').hidden=true}
+function abort(message){cancelled=true;status(message);if(recorder&&recorder.state!=='inactive')recorder.stop();else cleanup()}
+function size(){const mode=$('aspect').value,sw=video.videoWidth,sh=video.videoHeight;if(mode==='source')return{w:sw,h:sh};const [a,b]=mode.split(':').map(Number),max=1080;let w,h;if(a>=b){w=Math.min(max,sw);h=Math.round(w*b/a)}else{h=Math.min(max,sh);w=Math.round(h*a/b)}w-=w%2;h-=h%2;return{w:Math.max(2,w),h:Math.max(2,h)}}
+function activeCaption(){const t=video.currentTime;return captions.find(c=>t>=c.start&&t<=c.end)?.text||''}
+function drawFrame(){const w=canvas.width,h=canvas.height,sw=video.videoWidth,sh=video.videoHeight,scale=Math.max(w/sw,h/sh),dw=sw*scale,dh=sh*scale,ctx=canvas.getContext('2d');ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);ctx.globalAlpha=1;const tr=$('transition').value,dur=Number($('transitionDuration').value),clip=clips[activeClip],clipStart=clip?.range?.start??0,elapsed=Math.max(0,video.currentTime-clipStart);if(tr==='fade'&&activeClip>0&&elapsed<dur)ctx.globalAlpha=Math.max(0,Math.min(1,elapsed/dur));ctx.drawImage(video,(w-dw)/2,(h-dh)/2,dw,dh);ctx.globalAlpha=1;if(logo.src&&!logo.hidden&&logo.naturalWidth){const maxW=w*.18,maxH=h*.14,s=Math.min(maxW/logo.naturalWidth,maxH/logo.naturalHeight,1),lw=logo.naturalWidth*s,lh=logo.naturalHeight*s;ctx.globalAlpha=.88;ctx.drawImage(logo,w-lw-w*.035,h-lh-h*.035,lw,lh);ctx.globalAlpha=1}const caption=activeCaption(),text=caption||$('overlayText').value.trim();if(text){const fs=Math.max(22,Math.round(w*.045)),pad=Math.round(fs*.45),pos=$('overlayPosition').value;ctx.font=`700 ${fs}px system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';const metrics=ctx.measureText(text),boxW=Math.min(w*.92,metrics.width+pad*2),x=w/2,y=pos==='top'?h*.12:pos==='center'?h*.5:h*.86;ctx.fillStyle='rgba(0,0,0,.62)';ctx.fillRect(x-boxW/2,y-fs*.8,boxW,fs*1.6);ctx.fillStyle='#fff';ctx.fillText(text,x,y,boxW-pad*2)}}
+function draw(){if(!busy)return;drawFrame();raf=requestAnimationFrame(draw)}
+$('source').onchange=()=>{const files=[...$('source').files];if(!files.length)return;clips=files.map(file=>({file,name:file.name}));activeClip=0;loadClip(0)};
+video.onloadedmetadata=()=>{if(!Number.isFinite(video.duration)||video.duration<=0)return status('This file has no usable duration. Try another video.');if(clips[activeClip])clips[activeClip].duration=video.duration;const saved=clips[activeClip]?.range;$('start').value=String(saved?.start??0);$('end').value=String(saved?.end??video.duration);$('start').max=$('end').max=String(video.duration);$('controls').disabled=false;status(`Ready · ${video.duration.toFixed(2)} seconds · ${video.videoWidth}×${video.videoHeight}.`)};
+video.onerror=()=>busy?abort('Video decoding failed; export cancelled.'):( $('controls').disabled=true,status('This browser cannot play this video. Try an MP4 or WebM file.') );
+for(const id of ['start','end','aspect','mute','originalVolume','musicVolume','overlayText','overlayPosition'])$(id).onchange=()=>{previewing=false;video.pause();resetOutput();if(videoGain){videoGain.gain.value=$('mute').checked?0:Number($('originalVolume').value);musicGain.gain.value=Number($('musicVolume').value)}};
+
+$('autoCaption').onclick=async()=>{const clip=clips[activeClip];if(!clip)return status('Choose a video clip first.');if(clip.file.size>25*1024*1024)return status('Auto-caption currently accepts clips up to 25 MB. Trim/compress the clip first.');const button=$('autoCaption'),out=$('captionStatus');button.disabled=true;button.textContent='Transcribing…';out.textContent='Uploading the selected clip for speech-to-text…';try{const response=await fetch('/api/transcribe',{method:'POST',headers:{'content-type':clip.file.type||'application/octet-stream','x-mm-filename':encodeURIComponent(clip.file.name)},body:clip.file}),data=await response.json();if(!response.ok)throw Error(data.message||'Auto-caption is not configured.');captions=(data.captions||[]).map(c=>({start:Number(c.start),end:Number(c.end),text:String(c.text||'').trim()})).filter(c=>Number.isFinite(c.start)&&Number.isFinite(c.end)&&c.end>c.start&&c.text);out.textContent=captions.length?`${captions.length} caption cues generated.`:'No speech was detected.';status(captions.length?'Auto-captions ready and will be burned into export.':'No speech detected in this clip.');resetOutput()}catch(e){out.textContent=e.message;status(e.message)}finally{button.disabled=false;button.textContent='Auto-caption selected clip'}};
+$('captionFile').onchange=async()=>{const file=$('captionFile').files[0];captions=[];if(!file){status('Timed captions cleared.');return}const raw=await file.text(),toSec=s=>{const p=s.trim().replace(',','.').split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]};for(const block of raw.replace(/\r/g,'').split(/\n\n+/)){const lines=block.split('\n').filter(Boolean),idx=lines.findIndex(x=>x.includes('-->'));if(idx<0)continue;const times=lines[idx].split('-->');if(times.length!==2)continue;captions.push({start:toSec(times[0]),end:toSec(times[1].split(/\s+/)[0]),text:lines.slice(idx+1).join(' ')})}status(captions.length?`${captions.length} timed captions loaded.`:'No valid VTT caption cues found.');resetOutput()};
+$('logo').onchange=()=>{if(logoURL)URL.revokeObjectURL(logoURL);const file=$('logo').files[0];if(!file){logo.removeAttribute('src');logo.hidden=true;return}logoURL=URL.createObjectURL(file);logo.src=logoURL;logo.hidden=false;resetOutput();status('Logo/watermark ready for export.')};
+$('music').onchange=()=>{if(musicURL)URL.revokeObjectURL(musicURL);const file=$('music').files[0];if(!file){music.removeAttribute('src');music.hidden=true;return}musicURL=URL.createObjectURL(file);music.src=musicURL;music.hidden=false;music.loop=$('loopMusic').checked;status('Added audio ready for preview and export.')};$('loopMusic').onchange=()=>music.loop=$('loopMusic').checked;
+$('renderPreview').onclick=()=>{if(!video.videoWidth)return status('Choose a video clip first.');const s=size();canvas.width=s.w;canvas.height=s.h;drawFrame();status('Overlay preview updated below.');};
+$('play').onclick=async()=>{try{const{start}=range();await seek(start);video.muted=$('mute').checked;previewing=true;await video.play()}catch(e){previewing=false;status(e.message)}};
+video.ontimeupdate=()=>{if(previewing&&video.currentTime>=Number($('end').value)){video.pause();previewing=false}};
+$('split').onclick=()=>{try{const {start,end}=range(),at=video.currentTime;if(at<=start+.05||at>=end-.05)throw Error('Move the playhead inside the selected range before splitting.');const original=clips[activeClip];if(!original)throw Error('Choose a clip first.');const left={...original,name:`${original.name} · A`,range:{start,end:at}},right={...original,name:`${original.name} · B`,range:{start:at,end}};clips.splice(activeClip,1,left,right);renderClips();$('start').value=String(left.range.start);$('end').value=String(left.range.end);status('Clip split into two timeline items. Select either part to continue editing.')}catch(e){status(e.message)}};
+$('export').onclick=async()=>{if(busy)return;try{const{start,end}=range();if(!window.MediaRecorder||!canvas.captureStream)throw Error('Video export needs a recent desktop Chrome, Edge or Firefox browser.');const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'].find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('No supported video export format was found.');busy=true;cancelled=false;previewing=false;resetOutput();$('controls').disabled=true;$('source').disabled=true;video.controls=false;$('cancel').hidden=false;video.pause();await seek(start);if(cancelled)return cleanup();const s=size();canvas.width=s.w;canvas.height=s.h;const canvasStream=canvas.captureStream(30);stream=canvasStream;audioMix().getAudioTracks().forEach(t=>stream.addTrack(t));recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:5000000});const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onerror=()=>abort('Recording failed; no finished export was created.');recorder.onstop=()=>{if(!cancelled&&chunks.length){const blob=new Blob(chunks,{type:mime});outputURL=URL.createObjectURL(blob);$('download').href=outputURL;$('download').download=`marketingmind-edit.${mime.startsWith('video/mp4')?'mp4':'webm'}`;$('download').hidden=false;status(`Export ready · ${s.w}×${s.h}. Download and review before publishing.`)}else if(!cancelled)status('No video data was recorded. Try another browser.');cleanup()};video.muted=false;video.playbackRate=1;if($('music').files[0]){music.currentTime=0;music.loop=$('loopMusic').checked;await music.play()}recorder.start(250);draw();await video.play();$('progress').hidden=false;status('Exporting… Keep this tab visible.');timer=setInterval(()=>{$('progress').value=Math.min(1,(video.currentTime-start)/(end-start));if(video.currentTime>=end||video.ended){clearInterval(timer);video.pause();if(recorder?.state==='recording')recorder.stop()}},40)}catch(e){abort(e.message)}};
+$('exportTimeline').onclick=async()=>{if(busy||!clips.length)return;try{if(!window.MediaRecorder||!canvas.captureStream)throw Error('Timeline export needs a recent desktop Chrome, Edge or Firefox browser.');const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'].find(t=>MediaRecorder.isTypeSupported(t));if(!mime)throw Error('No supported timeline export format was found.');busy=true;cancelled=false;previewing=false;resetOutput();$('controls').disabled=true;$('source').disabled=true;video.controls=false;$('cancel').hidden=false;await loadClipReady(0);const s=size();canvas.width=s.w;canvas.height=s.h;stream=canvas.captureStream(30);audioMix().getAudioTracks().forEach(t=>stream.addTrack(t));recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:5000000});const chunks=[];recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};recorder.onerror=()=>abort('Timeline recording failed.');recorder.onstop=()=>{if(!cancelled&&chunks.length){const blob=new Blob(chunks,{type:mime});outputURL=URL.createObjectURL(blob);$('download').href=outputURL;$('download').download=`marketingmind-timeline.${mime.startsWith('video/mp4')?'mp4':'webm'}`;$('download').hidden=false;status('Full timeline export ready. Review it before publishing.')}cleanup()};recorder.start(250);draw();if($('music').files[0]){music.currentTime=0;music.loop=$('loopMusic').checked;await music.play()}$('progress').hidden=false;const total=clips.reduce((sum,c)=>sum+Math.max(.01,c.range?c.range.end-c.range.start:(Number(c.duration)||1)),0)||clips.length;let completed=0;for(let i=0;i<clips.length&&!cancelled;i++){await loadClipReady(i);const clip=clips[i],start=clip.range?.start??0,end=clip.range?.end??video.duration;if(end<=start)continue;await seek(start);status(`Exporting timeline · clip ${i+1} of ${clips.length}…`);await video.play();await new Promise(resolve=>{const tick=setInterval(()=>{const part=Math.max(0,Math.min(end-start,video.currentTime-start));$('progress').value=Math.min(1,(completed+part)/Math.max(total,.01));if(video.currentTime>=end||video.ended||cancelled){clearInterval(tick);video.pause();resolve()}},30)});completed+=end-start}if(recorder?.state==='recording')recorder.stop()}catch(e){abort(e.message)}};
+$('cancel').onclick=()=>abort('Export cancelled. Your source video is unchanged.');
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&busy)abort('Export cancelled because the tab was hidden. Keep it visible and try again.')});
+window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue=''}});
 })();
