@@ -1,22 +1,26 @@
-name: Video editor checks
+name: MarketingMind checks
 on:
   pull_request:
     paths:
+      - 'app.js'
       - 'video-editor.js'
       - 'video-editor.html'
       - 'functions/api/transcribe.js'
-      - 'functions/api/image-generate.js'
-      - 'functions/api/integrations.js'
       - 'functions/api/image-generate.js'
       - 'functions/api/integrations.js'
       - '.github/workflows/video-editor-checks.yml'
   push:
     branches:
+      - main
       - feature/video-editor-v2
     paths:
+      - 'app.js'
       - 'video-editor.js'
       - 'video-editor.html'
       - 'functions/api/transcribe.js'
+      - 'functions/api/image-generate.js'
+      - 'functions/api/integrations.js'
+      - '.github/workflows/video-editor-checks.yml'
 jobs:
   syntax:
     runs-on: ubuntu-latest
@@ -25,15 +29,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check application JavaScript syntax
+        run: node --check app.js
       - name: Check editor JavaScript syntax
         run: node --check video-editor.js
-      - name: Check transcription function syntax
-        run: node --check functions/api/transcribe.js
-      - name: Check media backend syntax
+      - name: Check backend JavaScript syntax
         run: |
+          node --check functions/api/transcribe.js
           node --check functions/api/image-generate.js
           node --check functions/api/integrations.js
-          node --check app.js
       - name: Check required editor controls
         run: |
           grep -q 'id="exportTimeline"' video-editor.html
