@@ -12,6 +12,7 @@ A deploy-ready, dependency-free MVP for a modular local-business marketing works
 - Publishing preflight with platform limits, overdue/conflict detection, post previews and CSV/calendar export
 - SEO Growth workspace with keyword ideas, opportunity scoring, competitor gap readiness and backlink pipeline tracking
 - Creator Media Studio with consented voice profiles, browser voice previews, text-to-image briefs and a reusable Asset Library
+- Video Editor V2 with multi-clip timeline, trim/split, aspect presets, audio/voiceover mixing, captions, watermark/text overlays, fade transitions and browser export
 - Basic SEO audit and Google Business/local SEO checklist
 - Secure live-URL SEO audit for title, description, H1, canonical, viewport, ALT coverage, schema, indexability and language
 - Prioritized SEO fix plan, business-aware metadata generator and downloadable audit report
@@ -103,7 +104,8 @@ For image generation, add a **Workers AI binding** under the production environm
 - `MARKETINGMIND_WORKSPACE_ID` — UUID receiving website form leads
 - `LEAD_FORM_ORIGIN` — exact allowed website origin; comma-separate additional origins
 - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — public widget key and encrypted server validation key
-- `OPENAI_API_KEY` — server-side AI generation only
+- `OPENAI_API_KEY` — server-side AI generation and video speech-to-text captions
+- `OPENAI_TRANSCRIBE_MODEL` — optional transcription model override; the video editor currently defaults to `whisper-1` when unset
 - `OPENAI_MODEL` — Responses API model used by the server route
 - `IMAGE_MODEL` — optional Workers AI image model override; the built-in default is FLUX.1 Schnell
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` — Google Business OAuth
