@@ -1,0 +1,34 @@
+name: Video editor checks
+on:
+  pull_request:
+    paths:
+      - 'video-editor.js'
+      - 'video-editor.html'
+      - 'functions/api/transcribe.js'
+      - '.github/workflows/video-editor-checks.yml'
+  push:
+    branches:
+      - feature/video-editor-v2
+    paths:
+      - 'video-editor.js'
+      - 'video-editor.html'
+      - 'functions/api/transcribe.js'
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check editor JavaScript syntax
+        run: node --check video-editor.js
+      - name: Check transcription function syntax
+        run: node --check functions/api/transcribe.js
+      - name: Check required editor controls
+        run: |
+          grep -q 'id="exportTimeline"' video-editor.html
+          grep -q 'id="autoCaption"' video-editor.html
+          grep -q 'id="renderPreview"' video-editor.html
+          grep -q 'id="music"' video-editor.html
+          grep -q 'id="captionFile"' video-editor.html
