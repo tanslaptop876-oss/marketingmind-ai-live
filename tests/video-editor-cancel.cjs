@@ -21,7 +21,9 @@ class Recorder {
   start(){this.state='recording';}
   stop(){this.state='inactive';}
 }
-const context={document:{getElementById:id=>elements[id],addEventListener(){}},window:{MediaRecorder:Recorder,AudioContext,addEventListener(){}},MediaRecorder:Recorder,URL,Blob,setTimeout,clearTimeout,requestAnimationFrame(){return 1;},cancelAnimationFrame(){},setInterval(){intervals++;return intervals;},clearInterval(){}};
+elements.clipList.replaceChildren=()=>{};
+elements.clipList.append=()=>{};
+const context={document:{getElementById:id=>elements[id],createElement:()=>({style:{},dataset:{}}),addEventListener(){}},window:{MediaRecorder:Recorder,AudioContext,addEventListener(){}},MediaRecorder:Recorder,URL,Blob,setTimeout,clearTimeout,requestAnimationFrame(){return 1;},cancelAnimationFrame(){},setInterval(){intervals++;return intervals;},clearInterval(){}};
 vm.runInNewContext(readFileSync(require('node:path').join(__dirname,'../video-editor.js'),'utf8'),context);
 (async()=>{
   elements.start.value='0';elements.end.value='10';
