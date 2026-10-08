@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'app.js'
+      - 'functions/api/workspaces.js'
+      - 'functions/api/cloud-state.js'
+      - 'tests/workspaces.cjs'
+      - 'supabase/workspaces_v3.sql'
       - 'video-editor.js'
       - 'video-editor.html'
       - 'functions/api/transcribe.js'
@@ -38,6 +42,10 @@ jobs:
           node --check functions/api/transcribe.js
           node --check functions/api/image-generate.js
           node --check functions/api/integrations.js
+          node --check functions/api/workspaces.js
+          node --check functions/api/cloud-state.js
+      - name: Run workspace and editor regressions
+        run: node --test tests/*.cjs
       - name: Check required editor controls
         run: |
           grep -q 'id="exportTimeline"' video-editor.html
