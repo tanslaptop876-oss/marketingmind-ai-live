@@ -9,6 +9,7 @@ on:
       - 'supabase/workspaces_v3.sql'
       - 'video-editor.js'
       - 'video-editor.html'
+      - 'tests/video-editor-*.cjs'
       - 'functions/api/transcribe.js'
       - 'functions/api/image-generate.js'
       - 'functions/api/integrations.js'
@@ -21,6 +22,7 @@ on:
       - 'app.js'
       - 'video-editor.js'
       - 'video-editor.html'
+      - 'tests/video-editor-*.cjs'
       - 'functions/api/transcribe.js'
       - 'functions/api/image-generate.js'
       - 'functions/api/integrations.js'
@@ -53,3 +55,7 @@ jobs:
           grep -q 'id="renderPreview"' video-editor.html
           grep -q 'id="music"' video-editor.html
           grep -q 'id="captionFile"' video-editor.html
+      - name: Check export lifecycle and audio regressions
+        run: |
+          node tests/video-editor-cancel.cjs
+          node tests/video-editor-audio.cjs
