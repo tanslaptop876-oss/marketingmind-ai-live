@@ -1,0 +1,17 @@
+name: Gemini generation checks
+on:
+  push:
+    branches: [main, fix/gemini-owner-generation]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  gemini:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --check app.js
+      - run: node --test tests/gemini-generation.mjs
