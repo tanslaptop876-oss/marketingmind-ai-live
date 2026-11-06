@@ -54,7 +54,16 @@ export async function onRequestPost(context){
       })
     });
   }catch{return reply({ok:false,error:'generation_timeout'},504)}
-  if(!response.ok)return reply({ok:false,error:response.status===429?'provider_rate_limited':'generation_failed'},response.status===429?429:502);
+  if(!response.ok){
+    const failure=await response.json().catch(()=>({}));
+    const reasons=(failure.error?.details||[]).map(detail=>detail.reason);
+    const error=reasons.includes('API_KEY_INVALID')?'provider_key_invalid':
+      response.status===401||response.status===403?'provider_access_denied':
+      response.status===404?'provider_model_unavailable':
+      response.status===429?'provider_rate_limited':
+      response.status===400?'provider_request_invalid':'generation_failed';
+    return reply({ok:false,error},response.status===429?429:502);
+  }
   try{
     const data=await response.json(),candidate=data.candidates?.[0];
     if(candidate?.finishReason!=='STOP')return reply({ok:false,error:'incomplete_or_blocked'},502);
