@@ -11,7 +11,7 @@ export async function onRequestGet(context) {
   };
   const integrations = [
     { id: 'supabase', name: 'Supabase cloud sync', configured: configured('SUPABASE_URL', 'SUPABASE_ANON_KEY') },
-    { id: 'openai', name: 'AI content generation', configured: Boolean(context.env.AI || context.env.GEMINI_API_KEY || context.env.GROQ_API_KEY || context.env.OPENAI_API_KEY) },
+    { id: 'openai', name: 'Gemini content generation (owner sign-in required)', configured: Boolean(context.env.GEMINI_API_KEY && context.env.GEMINI_MODEL && context.env.AI_ALLOWED_EMAILS && context.env.SUPABASE_URL && context.env.SUPABASE_ANON_KEY) },
     { id: 'media', name: 'Picture & video generation', configured: Boolean(context.env.AI || context.env.IMAGE_API_KEY || context.env.VIDEO_API_KEY) },
     { id: 'mediaStorage', name: 'Public media storage for social publishing', configured: Boolean(context.env.MEDIA_BUCKET && context.env.MEDIA_PUBLIC_BASE_URL) },
     { id: 'google', name: 'Google Business read-only implementation', configured: configured('GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI', 'PROVIDER_TOKEN_ENCRYPTION_KEY', 'SUPABASE_SERVICE_ROLE_KEY'), enabled: context.env.GOOGLE_CONNECT_ENABLED === 'true' },
