@@ -69,3 +69,13 @@ test('limits repeated owner requests before making provider calls',async()=>{
 });
 test('rejects unsupported HTTP methods',()=>assert.equal(onRequest().status,405));
 
+
+test('reports safe provider diagnosis without exposing upstream messages or keys',async()=>{
+  for(const [status,reason,error] of [[400,'API_KEY_INVALID','provider_key_invalid'],[403,'','provider_access_denied'],[404,'','provider_model_unavailable'],[400,'','provider_request_invalid']]){
+    await mock(async()=>{
+      const response=await onRequestPost({request:request(),env});
+      assert.equal(response.status,502);
+      assert.deepEqual(await response.json(),{ok:false,error});
+    },{provider:()=>Response.json({error:{message:'sensitive upstream data',details:[{reason}]}},{status})});
+  }
+});
