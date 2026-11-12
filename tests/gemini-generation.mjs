@@ -79,3 +79,28 @@ test('reports safe provider diagnosis without exposing upstream messages or keys
     },{provider:()=>Response.json({error:{message:'sensitive upstream data',details:[{reason}]}},{status})});
   }
 });
+
+test('routes explicit Grok requests to xAI and rejects unconfigured or unknown providers', async () => {
+  const grokEnv = {...env, XAI_MODEL: 'grok-test', XAI_API_KEY: 'xai-test-secret'};
+  await mock(async calls => {
+    assert.equal((await onRequestPost({request: request({...brief, provider:'grok'}), env})).status, 503);
+    assert.equal((await onRequestPost({request: request({...brief, provider:'other'}), env})).status, 400);
+    assert.equal(calls.length, 0);
+    const response = await onRequestPost({request: request({...brief, provider:'grok'}), env:grokEnv});
+    assert.deepEqual(await response.json(), {ok:true, text:'Test Grok draft', model:'grok-test', provider:'Grok', usage:{total_tokens:12}});
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'https://api.x.ai/v1/responses');
+    assert.equal(calls[0].init.headers.authorization, 'Bearer xai-test-secret');
+    assert.equal(JSON.parse(calls[0].init.body).store, false);
+  }, {provider: () => Response.json({status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:'Test Grok draft'}]}],usage:{total_tokens:12}})});
+});
+
+test('does not fall back to Gemini on a Grok authentication failure', async () => {
+  await mock(async calls => {
+    const response = await onRequestPost({request:request({...brief,provider:'grok'}),env:{...env,XAI_MODEL:'grok-test',XAI_API_KEY:'invalid'}});
+    assert.equal(response.status,502);
+    assert.deepEqual(await response.json(),{ok:false,error:'provider_key_invalid'});
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.x.ai/v1/responses');
+  },{provider:()=>new Response('private provider details',{status:401})});
+});

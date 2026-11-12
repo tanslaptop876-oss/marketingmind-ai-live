@@ -214,7 +214,25 @@ function bindPage(){
   if($('#campaignSearch')){const filterCampaigns=()=>{const term=$('#campaignSearch').value.trim().toLowerCase(),status=$('#campaignStatus').value;let visible=0;$$('[data-campaign-card]').forEach(card=>{const show=(!term||card.dataset.search.includes(term))&&(!status||card.dataset.status===status);card.hidden=!show;if(show)visible++});$('#campaignCount').textContent=`${visible} of ${state.campaigns.length} campaigns shown`};$('#campaignSearch').oninput=filterCampaigns;$('#campaignStatus').onchange=filterCampaigns}
   if(location.hash==='#crm'&&state.leads.length){const table=$('.data-table'),wrap=table?.closest('.table-wrap');wrap?.insertAdjacentHTML('beforebegin',`<div class="planner-toolbar"><div class="planner-filters"><label>Search <input id="crmSearch" type="search" placeholder="Name, phone, service…"></label><label>Status <select id="crmStatus"><option value="">All statuses</option><option>New</option><option>Follow-up</option><option>Booked</option><option>Lost</option></select></label></div><small class="muted" id="crmCount">${state.leads.length} leads</small></div>`);const rows=$$('tbody tr',table);rows.forEach((row,index)=>{const lead=state.leads[index];row.dataset.crmRow='';row.dataset.status=lead.status;row.dataset.search=[lead.name,lead.phone,lead.source,lead.service,lead.notes].join(' ').toLowerCase()});const filterCrm=()=>{const term=$('#crmSearch').value.trim().toLowerCase(),status=$('#crmStatus').value;let visible=0;rows.forEach(row=>{const show=(!term||row.dataset.search.includes(term))&&(!status||row.dataset.status===status);row.hidden=!show;if(show)visible++});$('#crmCount').textContent=`${visible} of ${state.leads.length} leads shown`};$('#crmSearch').oninput=filterCrm;$('#crmStatus').onchange=filterCrm}
   if(location.hash==='#appointments'&&state.appointments.length){const table=$('.data-table'),wrap=table?.closest('.table-wrap'),sorted=state.appointments.slice().sort((a,b)=>a.date.localeCompare(b.date));wrap?.insertAdjacentHTML('beforebegin',`<div class="planner-toolbar"><div class="planner-filters"><label>Search <input id="appointmentSearch" type="search" placeholder="Customer, service, staff…"></label><label>Status <select id="appointmentFilterStatus"><option value="">All statuses</option><option>Pending</option><option>Confirmed</option><option>Completed</option><option>Cancelled</option></select></label></div><small class="muted" id="appointmentCount">${state.appointments.length} appointments</small></div>`);const rows=$$('tbody tr',table);rows.forEach((row,index)=>{const item=sorted[index];row.dataset.appointmentRow='';row.dataset.status=item.status;row.dataset.search=[item.customer,item.service,item.staff,item.date].join(' ').toLowerCase()});const filterAppointments=()=>{const term=$('#appointmentSearch').value.trim().toLowerCase(),status=$('#appointmentFilterStatus').value;let visible=0;rows.forEach(row=>{const show=(!term||row.dataset.search.includes(term))&&(!status||row.dataset.status===status);row.hidden=!show;if(show)visible++});$('#appointmentCount').textContent=`${visible} of ${state.appointments.length} appointments shown`};$('#appointmentSearch').oninput=filterAppointments;$('#appointmentFilterStatus').onchange=filterAppointments}
-  if($('#generateButton')&&!$('#genVariants')){$('#genLanguage').closest('.field').insertAdjacentHTML('afterend','<div class="field"><label>Draft variants</label><select id="genVariants"><option value="1">1 draft</option><option value="3" selected>3 variants</option></select></div>');$('#generateButton').textContent='✦ Generate locally';$('#generateButton').insertAdjacentHTML('afterend',' <button class="ghost-button" id="serverGenerateButton">Generate with Gemini</button> <span class="pill" id="serverAiStatus">Checking server…</span>');fetch('/api/integrations',{cache:'no-store'}).then(response=>response.json()).then(data=>{const ready=data.integrations?.find(item=>item.id==='openai')?.configured,button=$('#serverGenerateButton'),status=$('#serverAiStatus');button.disabled=!ready;button.title=ready?'Secure server AI is ready':'Configure Gemini and owner access in Cloudflare Pages';status.textContent=ready?'Server AI ready':'Server AI setup needed';status.className=`pill ${ready?'green':'orange'}`}).catch(()=>{const button=$('#serverGenerateButton'),status=$('#serverAiStatus');button.disabled=true;status.textContent='Server unavailable';status.className='pill orange'})}
+  if ($('#generateButton') && !$('#genVariants')) {
+    $('#genLanguage').closest('.field').insertAdjacentHTML('afterend','<div class="field"><label for="genVariants">Local draft variants</label><select id="genVariants"><option value="1">1 draft</option><option value="3" selected>3 variants</option></select></div>');
+    $('#generateButton').textContent = '✦ Generate locally';
+    $('#generateButton').insertAdjacentHTML('afterend',' <button class="ghost-button" id="serverGenerateButton" data-server-ai="gemini" disabled>Generate with Gemini</button> <button class="ghost-button" data-server-ai="grok" disabled>Generate with Grok</button> <span class="pill" id="serverAiStatus" role="status">Checking server…</span>');
+    const buttons = $('[data-server-ai]'), status = $('#serverAiStatus');
+    fetch('/api/integrations', {cache:'no-store'}).then(response => response.json()).then(data => {
+      const available = [];
+      for (const button of buttons) {
+        const grok = button.dataset.serverAi === 'grok';
+        const ready = data.integrations?.some(item => item.id === (grok ? 'grok' : 'openai') && item.configured);
+        button.dataset.ready = String(Boolean(ready));
+        button.disabled = !ready;
+        button.title = ready ? 'Requires an authorized account' : grok ? 'Set XAI_API_KEY and XAI_MODEL in Cloudflare Pages' : 'Configure Gemini in Cloudflare Pages';
+        if (ready) available.push(grok ? 'Grok' : 'Gemini');
+      }
+      status.textContent = available.length ? available.join(' and ') + ' ready' : 'Server AI setup needed';
+      status.className = 'pill ' + (available.length ? 'green' : 'orange');
+    }).catch(() => { status.textContent = 'Server unavailable'; status.className = 'pill orange'; });
+  }
   if($('#forecastChart')){
     const defaults={leads:[14,17,19,18,22,24],revenue:[38,42,47,45,55,64],visits:[720,810,870,940,1080,1284]};
     const refreshForecast=()=>{
@@ -241,24 +259,58 @@ function bindPage(){
     refreshForecast();
   }
   $('#generateButton')?.addEventListener('click',()=>{let topic=$('#genTopic').value.trim()||'your latest offer',type=$('#genType').value,goal=$('#genGoal').value,language=$('#genLanguage').value,count=Number($('#genVariants').value),drafts=Array.from({length:count},(_,index)=>createLocalDraft(topic,type,goal,language,index)),out=$('#generatedOutput'),channel=type.startsWith('Instagram')?'Instagram':type.startsWith('Facebook')?'Facebook':type.startsWith('Google')?'Google Business':'Blog';logUsage(`${type} · ${count} variant${count===1?'':'s'}`,count);out.style.display='block';out.innerHTML=`<div class="card-header"><div><h2 class="card-title">Your ${language} draft${count===1?'':' variants'}</h2><p class="card-subtitle">Choose, edit and verify before publishing</p></div><div><button class="ghost-button" id="copyDraft">Copy</button> <button class="primary-button" id="saveDraft">Save to planner</button></div></div>${count>1?`<div class="field" style="margin-bottom:12px"><label>Choose variant</label><select id="draftVariant">${drafts.map((_,i)=>`<option value="${i}">Variant ${i+1}</option>`).join('')}</select></div>`:''}<textarea id="draftText" style="width:100%;min-height:190px;font-size:15px;line-height:1.7">${escapeHtml(drafts[0])}</textarea><div class="content-meta" style="margin-top:12px"><span>${type} · ${goal}</span><button class="text-button" id="scheduleDraft">Schedule instead →</button></div>`;$('#draftVariant')?.addEventListener('change',event=>{$('#draftText').value=drafts[Number(event.target.value)]});$('#copyDraft').onclick=()=>navigator.clipboard?.writeText($('#draftText').value).then(()=>toast('Draft copied'));$('#saveDraft').onclick=()=>{state.posts.unshift({title:topic,copy:$('#draftText').value,channel,status:'Draft',date:'Unscheduled',theme:'alt'});save();toast('Selected draft saved to planner')};$('#scheduleDraft').onclick=()=>{let d=modal('Schedule generated draft',`<div class="field"><label>Publish date and time</label><input id="draftDate" type="datetime-local" required></div>`,'Schedule');d.onsubmit=e=>{e.preventDefault();state.posts.unshift({title:topic,copy:$('#draftText').value,channel,status:'Scheduled',date:new Date($('#draftDate').value).toLocaleString(),theme:'third'});save();d.close();toast('Selected draft added to publishing queue')}};});
-  $('#serverGenerateButton')?.addEventListener('click',async event=>{
-    const button=event.currentTarget,topic=$('#genTopic').value.trim(),type=$('#genType').value,goal=$('#genGoal').value,language=$('#genLanguage').value;
-    if(!topic){toast('Add a topic or verified offer first');return}
-    const workspace=activeWorkspaceId,business=state.business,out=$('#generatedOutput');
-    button.disabled=true;button.textContent='Generating with Gemini…';
-    try{
-      const response=await fetch('/api/generate',{method:'POST',signal:AbortSignal.timeout(60000),headers:{'content-type':'application/json'},body:JSON.stringify({topic,type,goal,language,business:business.name,tone:$('#genTone').value})}),data=await response.json();
-      if(!button.isConnected||!out.isConnected||activeWorkspaceId!==workspace||state.business!==business)return;
-      if(!response.ok||!data.ok){
-        const messages={provider_key_invalid:'Google rejected the Pages Gemini key. Replace GEMINI_API_KEY with a valid Google AI Studio key and redeploy.',provider_access_denied:'Google denied Gemini access. Check the API key project, restrictions and region.',provider_model_unavailable:'The selected Gemini model is unavailable for this project.',provider_request_invalid:'Google rejected the Gemini request. Check the configured key and model.',auth_unavailable:'Account verification is temporarily unavailable. Sign in again and retry.',invalid_output:'Gemini returned an empty or invalid draft. Nothing was saved.',sign_in_required:'Sign in with your owner account before using Gemini',ai_access_denied:'Your signed-in account is not enabled for Gemini. Use the configured owner account.',not_configured:'Gemini setup is incomplete in Cloudflare Pages',rate_limited:'Generation limit reached. Wait before trying again.',provider_rate_limited:'Gemini quota reached. Check Google project usage.',incomplete_or_blocked:'Gemini could not finish this draft. Review your brief.',generation_timeout:'Gemini timed out. Nothing was saved.',invalid_brief:'Check the brief and keep the topic under 600 characters.'};
-        toast(messages[data.error]||'Gemini could not generate a draft. Nothing was saved.');return
+  for (const button of $$('[data-server-ai]')) {
+    button.addEventListener('click', async () => {
+      const topic = $('#genTopic').value.trim();
+      if (!topic) { toast('Add a topic or verified offer first'); return; }
+      const provider = button.dataset.serverAi;
+      const label = provider === 'grok' ? 'Grok' : 'Gemini';
+      const type = $('#genType').value, goal = $('#genGoal').value, language = $('#genLanguage').value;
+      const workspace = activeWorkspaceId, business = state.business, out = $('#generatedOutput');
+      const buttons = $$('[data-server-ai]');
+      buttons.forEach(control => { control.disabled = true; });
+      button.textContent = 'Generating with ' + label + '…';
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST', signal: AbortSignal.timeout(60000),
+          headers: {'content-type':'application/json'},
+          body: JSON.stringify({provider,topic,type,goal,language,business:business.name,tone:$('#genTone').value})
+        });
+        const data = await response.json();
+        if (!button.isConnected || !out.isConnected || activeWorkspaceId !== workspace || state.business !== business) return;
+        if (!response.ok || !data.ok) {
+          const messages = {
+            provider_key_invalid: label + ' rejected the API key. Update it in Cloudflare Pages and redeploy.',
+            provider_access_denied: label + ' denied API access. Check the API key permissions.',
+            provider_model_unavailable: 'The configured ' + label + ' model is unavailable.',
+            provider_request_invalid: label + ' rejected the request. Check the configured model.',
+            auth_unavailable: 'Account verification is temporarily unavailable. Sign in again and retry.',
+            invalid_output: label + ' returned an invalid draft.',
+            sign_in_required: 'Sign in with your owner account before using ' + label,
+            ai_access_denied: 'Your signed-in account is not enabled for server AI.',
+            not_configured: label + ' setup is incomplete in Cloudflare Pages.',
+            rate_limited: 'Generation limit reached. Wait before trying again.',
+            provider_rate_limited: label + ' quota reached. Check your API project usage.',
+            incomplete_or_blocked: label + ' could not finish this draft. Review your brief.',
+            generation_timeout: label + ' timed out.',
+            invalid_brief: 'Check the brief and keep the topic under 600 characters.'
+          };
+          toast(messages[data.error] || label + ' could not generate a draft.');
+          return;
+        }
+        if (typeof data.text !== 'string' || !data.text.trim()) throw new Error('invalid_draft');
+        logUsage(label + ' · ' + type, Math.max(1, Math.ceil((data.usage?.total_tokens || 1) / 100)));
+        renderServerDraft(data.text, topic, type, goal, language, data.model);
+      } catch {
+        if (button.isConnected) toast(label + ' request failed. Nothing was saved.');
+      } finally {
+        if (button.isConnected) {
+          buttons.forEach(control => { control.disabled = control.dataset.ready !== 'true'; });
+          button.textContent = 'Generate with ' + label;
+        }
       }
-      if(typeof data.text!=='string'||!data.text.trim())throw new Error('invalid_draft');
-      logUsage('Gemini · '+type,Math.max(1,Math.ceil((data.usage?.total_tokens||1)/100)));
-      renderServerDraft(data.text,topic,type,goal,language,data.model);
-    }catch{if(button.isConnected)toast('Gemini request failed. Nothing was saved.')}
-    finally{if(button.isConnected){button.disabled=false;button.textContent='Generate with Gemini'}}
-  });
+    });
+  }
   $('#auditButton')?.addEventListener('click',seoAuditModal);
   $('#metadataButton')?.addEventListener('click',metadataModal);
   $('#exportSeoReport')?.addEventListener('click',exportSeoReport);
