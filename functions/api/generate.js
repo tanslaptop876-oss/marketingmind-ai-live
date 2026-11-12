@@ -42,12 +42,13 @@ export async function onRequestPost(context){
   let raw;try{raw=await readInput(request)}catch(error){return reply({ok:false,error:error.message},error.message==='request_too_large'?413:400)}
   const input=validated(raw);if(!input)return reply({ok:false,error:'invalid_brief'},400);
   const provider=raw.provider===undefined?'gemini':raw.provider;
-  if(provider!=='gemini'&&provider!=='grok')return reply({ok:false,error:'invalid_provider'},400);
-  const model=provider==='grok'?env.XAI_MODEL:env.GEMINI_MODEL;
-  const key=provider==='grok'?env.XAI_API_KEY:env.GEMINI_API_KEY;
-  if(!key||!/^[a-zA-Z0-9.-]+$/.test(model||''))return reply({ok:false,error:'not_configured'},503);
+  if(!['gemini','grok','groq'].includes(provider))return reply({ok:false,error:'invalid_provider'},400);
+  const model=provider==='grok'?env.XAI_MODEL:provider==='groq'?(env.GROQ_MODEL||'openai/gpt-oss-20b'):env.GEMINI_MODEL;
+  const key=provider==='grok'?env.XAI_API_KEY:provider==='groq'?env.GROQ_API_KEY:env.GEMINI_API_KEY;
+  if(!key||!/^[a-zA-Z0-9./_-]+$/.test(model||''))return reply({ok:false,error:'not_configured'},503);
   if(!allow(session.user.id)){session.headers.set('retry-after','60');return reply({ok:false,error:'rate_limited'},429)}
   if(provider==='grok')return generateGrok(input,model,key,reply);
+  if(provider==='groq')return generateGroq(input,model,key,reply);
   // No automatic retry and no fallback to another paid provider.
   let response;
   try{
@@ -115,4 +116,32 @@ async function generateGrok(input, model, key, reply) {
   } catch {
     return reply({ok: false, error: 'invalid_output'}, 502);
   }
+}
+
+async function generateGroq(input,model,key,reply){
+  let response;
+  try{
+    response=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      signal:AbortSignal.timeout(45000),
+      headers:{'content-type':'application/json',authorization:'Bearer '+key},
+      body:JSON.stringify({
+        model,
+        messages:[{role:'system',content:draftInstructions},{role:'user',content:JSON.stringify(input)}],
+        max_completion_tokens:1600,
+        temperature:0.7
+      })
+    });
+  }catch{return reply({ok:false,error:'generation_timeout'},504)}
+  if(!response.ok){
+    const errors={400:'provider_request_invalid',401:'provider_key_invalid',403:'provider_access_denied',404:'provider_model_unavailable',429:'provider_rate_limited'};
+    return reply({ok:false,error:errors[response.status]||'generation_failed'},response.status===429?429:502);
+  }
+  try{
+    const data=await response.json(),choice=data.choices?.[0];
+    if(choice?.finish_reason!=='stop')return reply({ok:false,error:'incomplete_or_blocked'},502);
+    const text=choice.message?.content;
+    if(typeof text!=='string'||!text.trim()||text.trim().length>16000)return reply({ok:false,error:'invalid_output'},502);
+    return reply({ok:true,text:text.trim(),model,provider:'Groq',usage:{total_tokens:Number(data.usage?.total_tokens)||0}});
+  }catch{return reply({ok:false,error:'invalid_output'},502)}
 }
