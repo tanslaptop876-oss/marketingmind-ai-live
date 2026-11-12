@@ -218,7 +218,7 @@ function bindPage(){
     $('#genLanguage').closest('.field').insertAdjacentHTML('afterend','<div class="field"><label for="genVariants">Local draft variants</label><select id="genVariants"><option value="1">1 draft</option><option value="3" selected>3 variants</option></select></div>');
     $('#generateButton').textContent = '✦ Generate locally';
     $('#generateButton').insertAdjacentHTML('afterend',' <button class="ghost-button" id="serverGenerateButton" data-server-ai="gemini" disabled>Generate with Gemini</button> <button class="ghost-button" data-server-ai="grok" disabled>Generate with Grok</button> <span class="pill" id="serverAiStatus" role="status">Checking server…</span>');
-    const buttons = $('[data-server-ai]'), status = $('#serverAiStatus');
+    const buttons = $$('[data-server-ai]'), status = $('#serverAiStatus');
     fetch('/api/integrations', {cache:'no-store'}).then(response => response.json()).then(data => {
       const available = [];
       for (const button of buttons) {
