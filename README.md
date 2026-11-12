@@ -136,3 +136,8 @@ Do not place real API keys in `app.js`. Use a serverless function or backend sec
 <!-- Cloudflare configuration refresh: 2026-08-26 -->
 
 <!-- YouTube connector enabled: 2026-08-26 -->
+
+
+## GroqCloud text generation
+
+GroqCloud (G-R-O-Q) is separate from xAI Grok. After deploying these changes, add `GROQ_API_KEY` as an encrypted **Production** secret in the **Marketing Mind AI Live Cloudflare Pages** project's **Settings → Variables and Secrets**. Optionally set `GROQ_MODEL` to a supported Groq chat-completions model; the default is `openai/gpt-oss-20b`. The owner-only content generator adds a distinct **Generate with Groq** button when the configured secret and authentication settings are present. It calls `https://api.groq.com/openai/v1/chat/completions` server-side, not from the browser. It does not automatically retry or silently switch to another provider, and requires an authenticated owner. The readiness indicator only checks whether variables are present; actual key validity requires an authorized test generation. Never commit Groq API keys to GitHub.
