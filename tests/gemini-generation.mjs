@@ -104,3 +104,31 @@ test('does not fall back to Gemini on a Grok authentication failure', async () =
     assert.equal(calls[0].url,'https://api.x.ai/v1/responses');
   },{provider:()=>new Response('private provider details',{status:401})});
 });
+
+test('routes explicit Groq request to GroqCloud without exposing the key',async()=>{
+  const groqEnv={...env,GROQ_API_KEY:'groq-private-test'};
+  await mock(async calls=>{
+    const response=await onRequestPost({request:request({...brief,provider:'groq'}),env:groqEnv});
+    assert.equal(response.status,200);
+    const data=await response.json();
+    assert.deepEqual(data,{ok:true,text:'Enjoy a peaceful spa experience.',model:'openai/gpt-oss-20b',provider:'Groq',usage:{total_tokens:24}});
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.groq.com/openai/v1/chat/completions');
+    assert.equal(calls[0].init.headers.authorization,'Bearer groq-private-test');
+    assert.equal(JSON.parse(calls[0].init.body).model,'openai/gpt-oss-20b');
+    assert.ok(!JSON.stringify(data).includes(groqEnv.GROQ_API_KEY));
+  },{provider:()=>Response.json({choices:[{finish_reason:'stop',message:{content:'Enjoy a peaceful spa experience.'}}],usage:{total_tokens:24}})});
+});
+
+test('Groq configuration and auth failure do not silently switch providers',async()=>{
+  await mock(async calls=>{
+    assert.equal((await onRequestPost({request:request({...brief,provider:'groq'}),env})).status,503);
+    assert.equal(calls.length,0);
+  });
+  await mock(async calls=>{
+    const response=await onRequestPost({request:request({...brief,provider:'groq'}),env:{...env,GROQ_API_KEY:'invalid'}});
+    assert.deepEqual(await response.json(),{ok:false,error:'provider_key_invalid'});
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.groq.com/openai/v1/chat/completions');
+  },{provider:()=>new Response('private error',{status:401})});
+});
