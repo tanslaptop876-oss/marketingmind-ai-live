@@ -283,6 +283,7 @@ function bindPage(){
             provider_key_invalid: label + ' rejected the API key. Update it in Cloudflare Pages and redeploy.',
             provider_access_denied: label + ' denied API access. Check the API key permissions.',
             provider_model_unavailable: 'The configured ' + label + ' model is unavailable.',
+            provider_billing_required: label + ' API credits or billing are required. Check your provider console.',
             provider_request_invalid: label + ' rejected the request. Check the configured model.',
             auth_unavailable: 'Account verification is temporarily unavailable. Sign in again and retry.',
             invalid_output: label + ' returned an invalid draft.',
