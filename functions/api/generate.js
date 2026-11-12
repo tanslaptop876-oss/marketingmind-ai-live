@@ -102,7 +102,18 @@ async function generateGrok(input, model, key, reply) {
   }
   if (!response.ok) {
     const errors = {400: 'provider_request_invalid', 401: 'provider_key_invalid', 403: 'provider_access_denied', 404: 'provider_model_unavailable', 429: 'provider_rate_limited'};
-    return reply({ok: false, error: errors[response.status] || 'generation_failed'}, response.status === 429 ? 429 : 502);
+    const payload = await response.json().catch(() => null);
+    const detail = typeof payload?.error === 'string' ? payload.error : payload?.error?.message;
+    const message = typeof detail === 'string' ? detail.toLowerCase().slice(0, 2000) : '';
+    let error = errors[response.status] || 'generation_failed';
+    if (response.status === 402 || /(?:no|insufficient|exhausted|purchase|buy|out of|does not have|don't have).{0,90}(?:credits|billing|licenses)|spending limit|billing limit|credit balance/.test(message)) {
+      error = 'provider_billing_required';
+    } else if (/invalid (?:api )?key|malformed (?:api )?key/.test(message)) {
+      error = 'provider_key_invalid';
+    } else if (/model.{0,120}(?:not found|does not exist|not available|not supported)|access to (?:the |this )?model/.test(message)) {
+      error = 'provider_model_unavailable';
+    }
+    return reply({ok: false, error}, response.status === 429 ? 429 : 502);
   }
   try {
     const data = await response.json();
