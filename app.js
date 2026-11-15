@@ -217,17 +217,18 @@ function bindPage(){
   if ($('#generateButton') && !$('#genVariants')) {
     $('#genLanguage').closest('.field').insertAdjacentHTML('afterend','<div class="field"><label for="genVariants">Local draft variants</label><select id="genVariants"><option value="1">1 draft</option><option value="3" selected>3 variants</option></select></div>');
     $('#generateButton').textContent = '✦ Generate locally';
-    $('#generateButton').insertAdjacentHTML('afterend',' <button class="ghost-button" id="serverGenerateButton" data-server-ai="gemini" disabled>Generate with Gemini</button> <button class="ghost-button" data-server-ai="grok" disabled>Generate with Grok</button> <span class="pill" id="serverAiStatus" role="status">Checking server…</span>');
+    $('#generateButton').insertAdjacentHTML('afterend',' <button class="ghost-button" id="serverGenerateButton" data-server-ai="gemini" disabled>Generate with Gemini</button> <button class="ghost-button" data-server-ai="grok" disabled>Generate with Grok</button> <button class="ghost-button" data-server-ai="claude" disabled>Generate with Claude</button> <span class="pill" id="serverAiStatus" role="status">Checking server…</span>');
     const buttons = $$('[data-server-ai]'), status = $('#serverAiStatus');
     fetch('/api/integrations', {cache:'no-store'}).then(response => response.json()).then(data => {
       const available = [];
       for (const button of buttons) {
-        const grok = button.dataset.serverAi === 'grok';
-        const ready = data.integrations?.some(item => item.id === (grok ? 'grok' : 'openai') && item.configured);
+        const provider = button.dataset.serverAi;
+        const label = {gemini: 'Gemini', grok: 'Grok', claude: 'Claude'}[provider];
+        const ready = data.integrations?.some(item => item.id === (provider === 'gemini' ? 'openai' : provider) && item.configured);
         button.dataset.ready = String(Boolean(ready));
         button.disabled = !ready;
-        button.title = ready ? 'Requires an authorized account' : grok ? 'Set XAI_API_KEY and XAI_MODEL in Cloudflare Pages' : 'Configure Gemini in Cloudflare Pages';
-        if (ready) available.push(grok ? 'Grok' : 'Gemini');
+        button.title = ready ? 'Requires an authorized account' : 'Configure ' + label + ' in Cloudflare Pages';
+        if (ready) available.push(label);
       }
       status.textContent = available.length ? available.join(' and ') + ' ready' : 'Server AI setup needed';
       status.className = 'pill ' + (available.length ? 'green' : 'orange');
@@ -264,7 +265,7 @@ function bindPage(){
       const topic = $('#genTopic').value.trim();
       if (!topic) { toast('Add a topic or verified offer first'); return; }
       const provider = button.dataset.serverAi;
-      const label = provider === 'grok' ? 'Grok' : 'Gemini';
+      const label = {gemini: 'Gemini', grok: 'Grok', claude: 'Claude'}[provider];
       const type = $('#genType').value, goal = $('#genGoal').value, language = $('#genLanguage').value;
       const workspace = activeWorkspaceId, business = state.business, out = $('#generatedOutput');
       const buttons = $$('[data-server-ai]');

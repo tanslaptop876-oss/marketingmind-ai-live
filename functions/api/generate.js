@@ -42,11 +42,12 @@ export async function onRequestPost(context){
   let raw;try{raw=await readInput(request)}catch(error){return reply({ok:false,error:error.message},error.message==='request_too_large'?413:400)}
   const input=validated(raw);if(!input)return reply({ok:false,error:'invalid_brief'},400);
   const provider=raw.provider===undefined?'gemini':raw.provider;
-  if(provider!=='gemini'&&provider!=='grok')return reply({ok:false,error:'invalid_provider'},400);
-  const model=provider==='grok'?env.XAI_MODEL:env.GEMINI_MODEL;
-  const key=provider==='grok'?env.XAI_API_KEY:env.GEMINI_API_KEY;
+  if(provider!=='gemini'&&provider!=='grok'&&provider!=='claude')return reply({ok:false,error:'invalid_provider'},400);
+  const model={gemini:env.GEMINI_MODEL,grok:env.XAI_MODEL,claude:env.ANTHROPIC_MODEL}[provider];
+  const key={gemini:env.GEMINI_API_KEY,grok:env.XAI_API_KEY,claude:env.ANTHROPIC_API_KEY}[provider];
   if(!key||!/^[a-zA-Z0-9.-]+$/.test(model||''))return reply({ok:false,error:'not_configured'},503);
   if(!allow(session.user.id)){session.headers.set('retry-after','60');return reply({ok:false,error:'rate_limited'},429)}
+  if(provider==='claude')return generateClaude(input,model,key,reply);
   if(provider==='grok')return generateGrok(input,model,key,reply);
   // No automatic retry and no fallback to another paid provider.
   let response;
@@ -123,6 +124,39 @@ async function generateGrok(input, model, key, reply) {
     const text = parts.filter(part => part.type === 'output_text' && typeof part.text === 'string').map(part => part.text).join('\n').trim();
     if (!text || text.length > 16000) return reply({ok: false, error: 'invalid_output'}, 502);
     return reply({ok: true, text, model, provider: 'Grok', usage: {total_tokens: Number(data.usage?.total_tokens) || 0}});
+  } catch {
+    return reply({ok: false, error: 'invalid_output'}, 502);
+  }
+}
+
+async function generateClaude(input, model, key, reply) {
+  let response;
+  try {
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: AbortSignal.timeout(45000),
+      headers: {'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01'},
+      body: JSON.stringify({
+        model,
+        max_tokens: 1200,
+        system: draftInstructions,
+        messages: [{role: 'user', content: JSON.stringify(input)}]
+      })
+    });
+  } catch {
+    return reply({ok: false, error: 'generation_timeout'}, 504);
+  }
+  if (!response.ok) {
+    const errors = {400: 'provider_request_invalid', 401: 'provider_key_invalid', 402: 'provider_billing_required', 403: 'provider_access_denied', 404: 'provider_model_unavailable', 429: 'provider_rate_limited'};
+    return reply({ok: false, error: errors[response.status] || 'generation_failed'}, response.status === 429 ? 429 : 502);
+  }
+  try {
+    const data = await response.json();
+    if (data.stop_reason !== 'end_turn') return reply({ok: false, error: 'incomplete_or_blocked'}, 502);
+    const text = data.content.filter(part => part.type === 'text' && typeof part.text === 'string').map(part => part.text).join('\n').trim();
+    if (!text || text.length > 16000) return reply({ok: false, error: 'invalid_output'}, 502);
+    const total_tokens = ['input_tokens', 'output_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens'].reduce((sum, field) => sum + (Number(data.usage?.[field]) || 0), 0);
+    return reply({ok: true, text, model, provider: 'Claude', usage: {total_tokens}});
   } catch {
     return reply({ok: false, error: 'invalid_output'}, 502);
   }

@@ -104,3 +104,17 @@ test('does not fall back to Gemini on a Grok authentication failure', async () =
     assert.equal(calls[0].url,'https://api.x.ai/v1/responses');
   },{provider:()=>new Response('private provider details',{status:401})});
 });
+
+test('Claude uses Anthropic Messages and preserves the draft response format', async () => {
+  const claudeEnv = {...env, ANTHROPIC_MODEL:'claude-test', ANTHROPIC_API_KEY:'anthropic-test-key'};
+  await mock(async calls => {
+    assert.equal((await onRequestPost({request:request({...brief,provider:'claude'}),env})).status,503);
+    assert.equal(calls.length,0);
+    const result = await onRequestPost({request:request({...brief,provider:'claude'}),env:claudeEnv});
+    assert.deepEqual(await result.json(),{ok:true,text:'Claude draft',model:'claude-test',provider:'Claude',usage:{total_tokens:15}});
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.anthropic.com/v1/messages');
+    assert.equal(calls[0].init.headers['x-api-key'],claudeEnv.ANTHROPIC_API_KEY);
+    assert.equal(JSON.parse(calls[0].init.body).max_tokens,1200);
+  },{provider:()=>Response.json({stop_reason:'end_turn',content:[{type:'text',text:'Claude draft'}],usage:{input_tokens:10,output_tokens:5}})});
+});
